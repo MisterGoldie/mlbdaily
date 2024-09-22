@@ -21,8 +21,28 @@ interface Game {
   home_score?: number;
   inning?: number;
   inning_half?: string;
-  venue?: { name: string; city: string; state: string };
 }
+
+interface TeamStanding {
+  team: { id: string; name: string };
+  rank: {
+    division: number;
+    league: number;
+  };
+  win: number;
+  loss: number;
+  games_back: number;
+}
+
+interface League {
+  divisions: Division[];
+}
+
+interface Division {
+  teams: TeamStanding[];
+}
+
+let standingsCache: TeamStanding[] | null = null;
 
 async function fetchMLBSchedule(): Promise<Game[] | null> {
   const date = new Date().toISOString().split('T')[0].replace(/-/g, '/')
@@ -38,20 +58,26 @@ async function fetchMLBSchedule(): Promise<Game[] | null> {
   }
 }
 
-async function fetchGameSummary(gameId: string): Promise<Game | null> {
-  const apiUrl = `https://api.sportradar.com/mlb/trial/v7/en/games/${gameId}/summary.json?api_key=${API_KEY}`
+async function fetchStandings(): Promise<TeamStanding[] | null> {
+  if (standingsCache) return standingsCache;
+
+  const apiUrl = `https://api.sportradar.com/mlb/trial/v7/en/seasons/2024/REG/standings.json?api_key=${API_KEY}`
 
   try {
     const response = await fetch(apiUrl)
     const data = await response.json()
-    return {
-      ...data,
-      venue: data.venue
-    }
+    standingsCache = data.league.season.leagues
+      .flatMap((league: League) => league.divisions)
+      .flatMap((division: Division) => division.teams)
+    return standingsCache
   } catch (error) {
-    console.error('Error fetching game summary:', error)
+    console.error('Error fetching standings:', error)
     return null
   }
+}
+
+function findTeamStanding(standings: TeamStanding[], teamId: string): TeamStanding | undefined {
+  return standings.find(standing => standing.team.id === teamId)
 }
 
 app.frame('/', async (c) => {
@@ -88,10 +114,20 @@ app.frame('/', async (c) => {
 app.frame('/games/:index', async (c) => {
   console.log('Game frame called with index:', c.req.param('index'))
   try {
-    const games = await fetchMLBSchedule()
+    const [games, standings] = await Promise.all([fetchMLBSchedule(), fetchStandings()])
+    
     if (!games || games.length === 0) {
       return c.res({
         image: 'https://placehold.co/600x400/png?text=No+MLB+Games+Today',
+        intents: [
+          <Button action="/">Back to Start</Button>
+        ]
+      })
+    }
+
+    if (!standings) {
+      return c.res({
+        image: 'https://placehold.co/600x400/png?text=Error+Fetching+Standings',
         intents: [
           <Button action="/">Back to Start</Button>
         ]
@@ -110,9 +146,6 @@ app.frame('/games/:index', async (c) => {
       })
     }
 
-    // Fetch game summary to get venue information
-    const gameSummary = await fetchGameSummary(game.id)
-
     const gameTime = new Date(game.scheduled).toLocaleTimeString('en-US', {
       hour: 'numeric',
       minute: '2-digit',
@@ -124,11 +157,13 @@ app.frame('/games/:index', async (c) => {
                      game.status === 'inprogress' ? `In Progress\nInning: ${game.inning_half || ''} ${game.inning || ''}\nScore: ${game.away_score || 0}-${game.home_score || 0}` :
                      `Final: ${game.away_score || 0}-${game.home_score || 0}`
 
-    let locationInfo = gameSummary && gameSummary.venue 
-      ? `${gameSummary.venue.name}, ${gameSummary.venue.city}, ${gameSummary.venue.state}`
-      : 'Location not available'
+    const awayStanding = findTeamStanding(standings, game.away.id)
+    const homeStanding = findTeamStanding(standings, game.home.id)
 
-    const imageText = `${game.away.name} @ ${game.home.name}\n${statusInfo}\n${locationInfo}\nGame ${index + 1} of ${games.length}`
+    const awayInfo = awayStanding ? `${awayStanding.win}-${awayStanding.loss} (${awayStanding.rank.division} in div)` : 'N/A'
+    const homeInfo = homeStanding ? `${homeStanding.win}-${homeStanding.loss} (${homeStanding.rank.division} in div)` : 'N/A'
+
+    const imageText = `${game.away.name} @ ${game.home.name}\n${statusInfo}\n${game.away.name}: ${awayInfo}\n${game.home.name}: ${homeInfo}\nGame ${index + 1} of ${games.length}`
 
     return c.res({
       image: `https://placehold.co/600x400/png?text=${encodeURIComponent(imageText)}`,
