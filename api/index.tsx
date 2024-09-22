@@ -135,7 +135,10 @@ app.frame('/games/:index', async (c) => {
       statusInfo = `Scheduled: ${gameTime} ET`
     }
 
-    const imageText = `${awayTeam} @ ${homeTeam}\n${statusInfo}\nGame ${index + 1} of ${games.length}`
+    // Add game number out of total games to statusInfo
+    statusInfo += `\nGame ${index + 1} of ${games.length}`
+
+    const imageText = `${awayTeam} @ ${homeTeam}\n${statusInfo}`
 
     console.log('Image text:', imageText)
 
@@ -158,10 +161,6 @@ app.frame('/games/:index', async (c) => {
     })
   }
 })
-
-
-
-// Continuing from the previous code...
 
 app.frame('/comparison/:index', async (c) => {
   console.log('Comparison frame called with index:', c.req.param('index'))
