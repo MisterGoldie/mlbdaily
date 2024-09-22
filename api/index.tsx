@@ -243,7 +243,8 @@ app.frame('/comparison/:index', async (c) => {
     
     if (!games || games.length === 0 || !standings || !rankings) {
       return c.res({
-        image: 'https://placehold.co/2000x2000/png?text=No+Data+Available',
+        image: 'https://placehold.co/3000x3000/png?text=No+Data+Available',
+        imageAspectRatio: '1:1',
         intents: [
           <Button action="/">Back to Start</Button>
         ]
@@ -255,7 +256,8 @@ app.frame('/comparison/:index', async (c) => {
 
     if (!game) {
       return c.res({
-        image: 'https://placehold.co/2000x2000/png?text=Game+Not+Found',
+        image: 'https://placehold.co/3000x3000/png?text=Game+Not+Found',
+        imageAspectRatio: '1:1',
         intents: [
           <Button action="/">Back to Start</Button>
         ]
@@ -268,7 +270,8 @@ app.frame('/comparison/:index', async (c) => {
 
     if (!awayStanding || !homeStanding) {
       return c.res({
-        image: 'https://placehold.co/2000x2000/png?text=Team+Data+Not+Available',
+        image: 'https://placehold.co/3000x3000/png?text=Team+Data+Not+Available',
+        imageAspectRatio: '1:1',
         intents: [
           <Button action={`/games/${index}`}>Back to Game</Button>,
           <Button action="/">Back to Start</Button>
@@ -279,28 +282,23 @@ app.frame('/comparison/:index', async (c) => {
     const formatRecord = (win: number, loss: number) => `${win}-${loss}`
     const formatWinPercentage = (winP: number) => `${(winP * 100).toFixed(1)}%`
     const formatRank = (rank: number | undefined) => rank?.toString() || 'N/A'
+    const pad = (str: string, length: number) => str.padStart(length)
 
     const comparisonText = `
-${game.away.name.padEnd(25)}${game.home.name}
-
-Rec:${formatRecord(awayStanding.win, awayStanding.loss).padStart(25)}${formatRecord(homeStanding.win, homeStanding.loss).padStart(25)}
-
-Win%:${formatWinPercentage(awayStanding.win_p).padStart(24)}${formatWinPercentage(homeStanding.win_p).padStart(25)}
-
-Strk:${awayStanding.streak.padStart(25)}${homeStanding.streak.padStart(25)}
-
-L10:${`${awayStanding.last_10_won}-${awayStanding.last_10_lost}`.padStart(26)}${`${homeStanding.last_10_won}-${homeStanding.last_10_lost}`.padStart(25)}
-
-LgR:${formatRank(awayStanding.league_rank).padStart(26)}${formatRank(homeStanding.league_rank).padStart(25)}
-
-DivR:${formatRank(awayStanding.division_rank).padStart(25)}${formatRank(homeStanding.division_rank).padStart(25)}
-
-GB:${awayStanding.games_back.toString().padStart(27)}${homeStanding.games_back.toString().padStart(25)}
+${pad(game.away.name, 35)}${game.home.name}
+${''.padStart(70, '-')}
+Rec:${pad(formatRecord(awayStanding.win, awayStanding.loss), 32)}${pad(formatRecord(homeStanding.win, homeStanding.loss), 35)}
+Win%:${pad(formatWinPercentage(awayStanding.win_p), 31)}${pad(formatWinPercentage(homeStanding.win_p), 35)}
+Strk:${pad(awayStanding.streak, 32)}${pad(homeStanding.streak, 35)}
+L10:${pad(`${awayStanding.last_10_won}-${awayStanding.last_10_lost}`, 33)}${pad(`${homeStanding.last_10_won}-${homeStanding.last_10_lost}`, 35)}
+LgR:${pad(formatRank(awayStanding.league_rank), 33)}${pad(formatRank(homeStanding.league_rank), 35)}
+DivR:${pad(formatRank(awayStanding.division_rank), 32)}${pad(formatRank(homeStanding.division_rank), 35)}
+GB:${pad(awayStanding.games_back.toString(), 34)}${pad(homeStanding.games_back.toString(), 35)}
 `
 
     return c.res({
-      // Increased dimensions to 2000x2000 for smaller relative font size
-      image: `https://placehold.co/2000x2000/png?text=${encodeURIComponent(comparisonText)}`,
+      image: `https://placehold.co/3000x3000/png?text=${encodeURIComponent(comparisonText)}`,
+      imageAspectRatio: '1:1',
       intents: [
         <Button action={`/games/${index}`}>Back to Game</Button>,
         <Button action="/">Back to Start</Button>
@@ -309,7 +307,8 @@ GB:${awayStanding.games_back.toString().padStart(27)}${homeStanding.games_back.t
   } catch (error) {
     console.error('Error in comparison frame:', error)
     return c.res({
-      image: 'https://placehold.co/2000x2000/png?text=Error+Occurred',
+      image: 'https://placehold.co/3000x3000/png?text=Error+Occurred',
+      imageAspectRatio: '1:1',
       intents: [
         <Button action="/">Back to Start</Button>
       ]
