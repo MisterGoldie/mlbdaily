@@ -243,7 +243,7 @@ app.frame('/comparison/:index', async (c) => {
     
     if (!games || games.length === 0 || !standings || !rankings) {
       return c.res({
-        image: 'https://placehold.co/1000x1000/png?text=No+Data+Available',
+        image: 'https://placehold.co/2000x2000/png?text=No+Data+Available',
         intents: [
           <Button action="/">Back to Start</Button>
         ]
@@ -255,7 +255,7 @@ app.frame('/comparison/:index', async (c) => {
 
     if (!game) {
       return c.res({
-        image: 'https://placehold.co/1000x1000/png?text=Game+Not+Found',
+        image: 'https://placehold.co/2000x2000/png?text=Game+Not+Found',
         intents: [
           <Button action="/">Back to Start</Button>
         ]
@@ -268,7 +268,7 @@ app.frame('/comparison/:index', async (c) => {
 
     if (!awayStanding || !homeStanding) {
       return c.res({
-        image: 'https://placehold.co/1000x1000/png?text=Team+Data+Not+Available',
+        image: 'https://placehold.co/2000x2000/png?text=Team+Data+Not+Available',
         intents: [
           <Button action={`/games/${index}`}>Back to Game</Button>,
           <Button action="/">Back to Start</Button>
@@ -281,26 +281,26 @@ app.frame('/comparison/:index', async (c) => {
     const formatRank = (rank: number | undefined) => rank?.toString() || 'N/A'
 
     const comparisonText = `
-${game.away.name.padEnd(15)}${game.home.name}
+${game.away.name.padEnd(25)}${game.home.name}
 
-Rec:${formatRecord(awayStanding.win, awayStanding.loss).padStart(15)}${formatRecord(homeStanding.win, homeStanding.loss).padStart(15)}
+Rec:${formatRecord(awayStanding.win, awayStanding.loss).padStart(25)}${formatRecord(homeStanding.win, homeStanding.loss).padStart(25)}
 
-Win%:${formatWinPercentage(awayStanding.win_p).padStart(14)}${formatWinPercentage(homeStanding.win_p).padStart(15)}
+Win%:${formatWinPercentage(awayStanding.win_p).padStart(24)}${formatWinPercentage(homeStanding.win_p).padStart(25)}
 
-Strk:${awayStanding.streak.padStart(15)}${homeStanding.streak.padStart(15)}
+Strk:${awayStanding.streak.padStart(25)}${homeStanding.streak.padStart(25)}
 
-L10:${`${awayStanding.last_10_won}-${awayStanding.last_10_lost}`.padStart(16)}${`${homeStanding.last_10_won}-${homeStanding.last_10_lost}`.padStart(15)}
+L10:${`${awayStanding.last_10_won}-${awayStanding.last_10_lost}`.padStart(26)}${`${homeStanding.last_10_won}-${homeStanding.last_10_lost}`.padStart(25)}
 
-LgR:${formatRank(awayStanding.league_rank).padStart(16)}${formatRank(homeStanding.league_rank).padStart(15)}
+LgR:${formatRank(awayStanding.league_rank).padStart(26)}${formatRank(homeStanding.league_rank).padStart(25)}
 
-DivR:${formatRank(awayStanding.division_rank).padStart(15)}${formatRank(homeStanding.division_rank).padStart(15)}
+DivR:${formatRank(awayStanding.division_rank).padStart(25)}${formatRank(homeStanding.division_rank).padStart(25)}
 
-GB:${awayStanding.games_back.toString().padStart(17)}${homeStanding.games_back.toString().padStart(15)}
+GB:${awayStanding.games_back.toString().padStart(27)}${homeStanding.games_back.toString().padStart(25)}
 `
 
     return c.res({
-      // Set to 1:1 aspect ratio
-      image: `https://placehold.co/1000x1000/png?text=${encodeURIComponent(comparisonText)}`,
+      // Increased dimensions to 2000x2000 for smaller relative font size
+      image: `https://placehold.co/2000x2000/png?text=${encodeURIComponent(comparisonText)}`,
       intents: [
         <Button action={`/games/${index}`}>Back to Game</Button>,
         <Button action="/">Back to Start</Button>
@@ -309,7 +309,7 @@ GB:${awayStanding.games_back.toString().padStart(17)}${homeStanding.games_back.t
   } catch (error) {
     console.error('Error in comparison frame:', error)
     return c.res({
-      image: 'https://placehold.co/1000x1000/png?text=Error+Occurred',
+      image: 'https://placehold.co/2000x2000/png?text=Error+Occurred',
       intents: [
         <Button action="/">Back to Start</Button>
       ]
