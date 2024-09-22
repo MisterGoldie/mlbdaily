@@ -243,7 +243,7 @@ app.frame('/comparison/:index', async (c) => {
     
     if (!games || games.length === 0 || !standings || !rankings) {
       return c.res({
-        image: 'https://placehold.co/600x400/png?text=No+Data+Available',
+        image: 'https://placehold.co/1000x1000/png?text=No+Data+Available',
         intents: [
           <Button action="/">Back to Start</Button>
         ]
@@ -255,7 +255,7 @@ app.frame('/comparison/:index', async (c) => {
 
     if (!game) {
       return c.res({
-        image: 'https://placehold.co/600x400/png?text=Game+Not+Found',
+        image: 'https://placehold.co/1000x1000/png?text=Game+Not+Found',
         intents: [
           <Button action="/">Back to Start</Button>
         ]
@@ -268,7 +268,7 @@ app.frame('/comparison/:index', async (c) => {
 
     if (!awayStanding || !homeStanding) {
       return c.res({
-        image: 'https://placehold.co/600x400/png?text=Team+Data+Not+Available',
+        image: 'https://placehold.co/1000x1000/png?text=Team+Data+Not+Available',
         intents: [
           <Button action={`/games/${index}`}>Back to Game</Button>,
           <Button action="/">Back to Start</Button>
@@ -278,28 +278,29 @@ app.frame('/comparison/:index', async (c) => {
 
     const formatRecord = (win: number, loss: number) => `${win}-${loss}`
     const formatWinPercentage = (winP: number) => `${(winP * 100).toFixed(1)}%`
+    const formatRank = (rank: number | undefined) => rank?.toString() || 'N/A'
 
     const comparisonText = `
-${game.away.name.padEnd(20)}${game.home.name}
+${game.away.name.padEnd(15)}${game.home.name}
 
-Record :${formatRecord(awayStanding.win, awayStanding.loss).padStart(20)}${formatRecord(homeStanding.win, homeStanding.loss).padStart(20)}
+Rec:${formatRecord(awayStanding.win, awayStanding.loss).padStart(15)}${formatRecord(homeStanding.win, homeStanding.loss).padStart(15)}
 
-Win % :${formatWinPercentage(awayStanding.win_p).padStart(20)}${formatWinPercentage(homeStanding.win_p).padStart(20)}
+Win%:${formatWinPercentage(awayStanding.win_p).padStart(14)}${formatWinPercentage(homeStanding.win_p).padStart(15)}
 
-Streak :${awayStanding.streak.padStart(20)}${homeStanding.streak.padStart(20)}
+Strk:${awayStanding.streak.padStart(15)}${homeStanding.streak.padStart(15)}
 
-Last 10 :${`${awayStanding.last_10_won}-${awayStanding.last_10_lost}`.padStart(20)}${`${homeStanding.last_10_won}-${homeStanding.last_10_lost}`.padStart(20)}
+L10:${`${awayStanding.last_10_won}-${awayStanding.last_10_lost}`.padStart(16)}${`${homeStanding.last_10_won}-${homeStanding.last_10_lost}`.padStart(15)}
 
-LgRank :${(awayStanding.league_rank || 'N/A').toString().padStart(20)}${(homeStanding.league_rank || 'N/A').toString().padStart(20)}
+LgR:${formatRank(awayStanding.league_rank).padStart(16)}${formatRank(homeStanding.league_rank).padStart(15)}
 
-DivRank:${(awayStanding.division_rank || 'N/A').toString().padStart(20)}${(homeStanding.division_rank || 'N/A').toString().padStart(20)}
+DivR:${formatRank(awayStanding.division_rank).padStart(15)}${formatRank(homeStanding.division_rank).padStart(15)}
 
-GB :${awayStanding.games_back.toString().padStart(20)}${homeStanding.games_back.toString().padStart(20)}
+GB:${awayStanding.games_back.toString().padStart(17)}${homeStanding.games_back.toString().padStart(15)}
 `
 
     return c.res({
-      // Significantly reduced font size by setting a large image size
-      image: `https://placehold.co/1200x800/png?text=${encodeURIComponent(comparisonText)}`,
+      // Set to 1:1 aspect ratio
+      image: `https://placehold.co/1000x1000/png?text=${encodeURIComponent(comparisonText)}`,
       intents: [
         <Button action={`/games/${index}`}>Back to Game</Button>,
         <Button action="/">Back to Start</Button>
@@ -308,7 +309,7 @@ GB :${awayStanding.games_back.toString().padStart(20)}${homeStanding.games_back.
   } catch (error) {
     console.error('Error in comparison frame:', error)
     return c.res({
-      image: 'https://placehold.co/600x400/png?text=Error+Occurred',
+      image: 'https://placehold.co/1000x1000/png?text=Error+Occurred',
       intents: [
         <Button action="/">Back to Start</Button>
       ]
