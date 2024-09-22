@@ -21,6 +21,7 @@ interface Game {
   home_score?: number;
   inning?: number;
   inning_half?: string;
+  venue?: { name: string; city: string; state: string };
 }
 
 async function fetchMLBSchedule(): Promise<Game[] | null> {
@@ -33,6 +34,22 @@ async function fetchMLBSchedule(): Promise<Game[] | null> {
     return data.games
   } catch (error) {
     console.error('Error fetching schedule:', error)
+    return null
+  }
+}
+
+async function fetchGameSummary(gameId: string): Promise<Game | null> {
+  const apiUrl = `https://api.sportradar.com/mlb/trial/v7/en/games/${gameId}/summary.json?api_key=${API_KEY}`
+
+  try {
+    const response = await fetch(apiUrl)
+    const data = await response.json()
+    return {
+      ...data,
+      venue: data.venue
+    }
+  } catch (error) {
+    console.error('Error fetching game summary:', error)
     return null
   }
 }
@@ -93,6 +110,9 @@ app.frame('/games/:index', async (c) => {
       })
     }
 
+    // Fetch game summary to get venue information
+    const gameSummary = await fetchGameSummary(game.id)
+
     const gameTime = new Date(game.scheduled).toLocaleTimeString('en-US', {
       hour: 'numeric',
       minute: '2-digit',
@@ -104,7 +124,11 @@ app.frame('/games/:index', async (c) => {
                      game.status === 'inprogress' ? `In Progress\nInning: ${game.inning_half || ''} ${game.inning || ''}\nScore: ${game.away_score || 0}-${game.home_score || 0}` :
                      `Final: ${game.away_score || 0}-${game.home_score || 0}`
 
-    const imageText = `${game.away.name} @ ${game.home.name}\n${statusInfo}\nGame ${index + 1} of ${games.length}`
+    let locationInfo = gameSummary && gameSummary.venue 
+      ? `${gameSummary.venue.name}, ${gameSummary.venue.city}, ${gameSummary.venue.state}`
+      : 'Location not available'
+
+    const imageText = `${game.away.name} @ ${game.home.name}\n${statusInfo}\n${locationInfo}\nGame ${index + 1} of ${games.length}`
 
     return c.res({
       image: `https://placehold.co/600x400/png?text=${encodeURIComponent(imageText)}`,
