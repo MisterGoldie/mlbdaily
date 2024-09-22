@@ -290,13 +290,16 @@ Record: ${formatRecord(awayStanding.win, awayStanding.loss)} | ${formatRecord(ho
 Win %: ${formatWinPercentage(awayStanding.win_p)} | ${formatWinPercentage(homeStanding.win_p)}
 Streak: ${awayStanding.streak} | ${homeStanding.streak}
 Last 10: ${awayStanding.last_10_won}-${awayStanding.last_10_lost} | ${homeStanding.last_10_won}-${homeStanding.last_10_lost}
-League Rank: ${formatRank(awayStanding.league_rank)} | ${formatRank(homeStanding.league_rank)}
-Division Rank: ${formatRank(awayStanding.division_rank)} | ${formatRank(homeStanding.division_rank)}
+Lg Rank: ${formatRank(awayStanding.league_rank)} | ${formatRank(homeStanding.league_rank)}
+Div Rank: ${formatRank(awayStanding.division_rank)} | ${formatRank(homeStanding.division_rank)}
 Games Back: ${awayStanding.games_back} | ${homeStanding.games_back}
     `.trim()
 
+    const encodedText = encodeURIComponent(comparisonText)
+    const imageUrl = `https://placehold.co/1000x1000/png?text=${encodedText}&font=arial&font-size=28`
+
     return c.res({
-      image: `https://placehold.co/1000x1000/png?text=${encodeURIComponent(comparisonText)}`,
+      image: imageUrl,
       imageAspectRatio: '1:1',
       intents: [
         <Button action={`/games/${index}`}>Back to Game</Button>,
