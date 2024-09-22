@@ -239,11 +239,11 @@ app.frame('/games/:index', async (c) => {
 app.frame('/comparison/:index', async (c) => {
   console.log('Comparison frame called with index:', c.req.param('index'))
   try {
-    const [games, standings] = await Promise.all([fetchMLBSchedule(), fetchStandings()])
+    const [games, standings, rankings] = await Promise.all([fetchMLBSchedule(), fetchStandings(), fetchRankings()])
     
-    if (!games || games.length === 0 || !standings) {
+    if (!games || games.length === 0 || !standings || !rankings) {
       return c.res({
-        image: 'https://placehold.co/1000x1000/png?text=No+Data+Available',
+        image: 'https://placehold.co/1000x1000/png?text=No+Data+Available&size=30',
         imageAspectRatio: '1:1',
         intents: [
           <Button action="/">Back to Start</Button>
@@ -256,7 +256,7 @@ app.frame('/comparison/:index', async (c) => {
 
     if (!game) {
       return c.res({
-        image: 'https://placehold.co/1000x1000/png?text=Game+Not+Found',
+        image: 'https://placehold.co/1000x1000/png?text=Game+Not+Found&size=30',
         imageAspectRatio: '1:1',
         intents: [
           <Button action="/">Back to Start</Button>
@@ -264,12 +264,13 @@ app.frame('/comparison/:index', async (c) => {
       })
     }
 
-    const awayStanding = findTeamStanding(standings, game.away.id)
-    const homeStanding = findTeamStanding(standings, game.home.id)
+    const updatedStandings = updateStandingsWithRankings(standings, rankings)
+    const awayStanding = findTeamStanding(updatedStandings, game.away.id)
+    const homeStanding = findTeamStanding(updatedStandings, game.home.id)
 
     if (!awayStanding || !homeStanding) {
       return c.res({
-        image: 'https://placehold.co/1000x1000/png?text=Team+Data+Not+Available',
+        image: 'https://placehold.co/1000x1000/png?text=Team+Data+Not+Available&size=30',
         imageAspectRatio: '1:1',
         intents: [
           <Button action={`/games/${index}`}>Back to Game</Button>,
@@ -296,7 +297,7 @@ GB : ${awayStanding.games_back.toString().padStart(14)} ${homeStanding.games_bac
 `
 
     return c.res({
-      image: `https://placehold.co/1000x1000/png?text=${encodeURIComponent(comparisonText)}`,
+      image: `https://placehold.co/1000x1000/png?text=${encodeURIComponent(comparisonText)}&size=20`,
       imageAspectRatio: '1:1',
       intents: [
         <Button action={`/games/${index}`}>Back to Game</Button>,
@@ -306,7 +307,7 @@ GB : ${awayStanding.games_back.toString().padStart(14)} ${homeStanding.games_bac
   } catch (error) {
     console.error('Error in comparison frame:', error)
     return c.res({
-      image: 'https://placehold.co/1000x1000/png?text=Error+Occurred',
+      image: 'https://placehold.co/1000x1000/png?text=Error+Occurred&size=30',
       imageAspectRatio: '1:1',
       intents: [
         <Button action="/">Back to Start</Button>
