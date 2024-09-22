@@ -32,14 +32,39 @@ async function fetchMLBSchedule(): Promise<Game[] | null> {
   }
 }
 
+const backgroundStyle = {
+  display: 'flex',
+  flexDirection: 'column' as const,
+  alignItems: 'center',
+  justifyContent: 'center',
+  width: '100%',
+  height: '100%',
+  backgroundImage: 'url(https://bafybeibowmohuk5b6xmxyh6mikmk2zo7y56nz2yaowknf6lgaq5xkqqnpm.ipfs.w3s.link/Frame%2060%20(1).png)',
+  backgroundSize: 'cover',
+  backgroundPosition: 'center',
+  color: 'white',
+  fontFamily: 'Arial, sans-serif',
+}
+
+const contentStyle = {
+  display: 'flex',
+  flexDirection: 'column' as const,
+  alignItems: 'center',
+  backgroundColor: 'rgba(0,0,0,0.6)',
+  padding: '20px',
+  borderRadius: '10px',
+}
+
 app.frame('/', async (c) => {
   const games = await fetchMLBSchedule()
 
   if (!games || games.length === 0) {
     return c.res({
       image: (
-        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', width: '100%', height: '100%', backgroundColor: '#041E42', color: 'white', fontSize: '32px', textAlign: 'center', padding: '20px' }}>
-          <div>No MLB games scheduled for today.</div>
+        <div style={backgroundStyle}>
+          <div style={contentStyle}>
+            <div style={{ fontSize: '32px', textAlign: 'center' }}>No MLB games scheduled for today.</div>
+          </div>
         </div>
       ),
       intents: [
@@ -50,8 +75,8 @@ app.frame('/', async (c) => {
 
   return c.res({
     image: (
-      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', width: '100%', height: '100%', backgroundImage: 'url(https://bafybeibowmohuk5b6xmxyh6mikmk2zo7y56nz2yaowknf6lgaq5xkqqnpm.ipfs.w3s.link/Frame%2060%20(1).png)', backgroundSize: 'cover', backgroundPosition: 'center', color: 'white', fontFamily: 'Arial, sans-serif' }}>
-        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', backgroundColor: 'rgba(0,0,0,0.6)', padding: '20px', borderRadius: '10px' }}>
+      <div style={backgroundStyle}>
+        <div style={contentStyle}>
           <div style={{ fontSize: '36px', fontWeight: 'bold', marginBottom: '20px', textShadow: '2px 2px 4px rgba(0,0,0,0.5)' }}>Today's MLB Games</div>
           <div style={{ fontSize: '24px', marginBottom: '10px' }}>{games.length} game{games.length !== 1 ? 's' : ''} scheduled</div>
           <div style={{ fontSize: '20px' }}>Tap 'View Games' to see details</div>
@@ -69,8 +94,10 @@ app.frame('/games/:index', async (c) => {
   if (!games || games.length === 0) {
     return c.res({
       image: (
-        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', width: '100%', height: '100%', backgroundColor: '#041E42', color: 'white', fontSize: '32px', textAlign: 'center', padding: '20px' }}>
-          <div>No MLB games scheduled for today.</div>
+        <div style={backgroundStyle}>
+          <div style={contentStyle}>
+            <div style={{ fontSize: '32px', textAlign: 'center' }}>No MLB games scheduled for today.</div>
+          </div>
         </div>
       ),
       intents: [
@@ -84,8 +111,8 @@ app.frame('/games/:index', async (c) => {
 
   return c.res({
     image: (
-      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', width: '100%', height: '100%', backgroundImage: 'url(https://bafybeibowmohuk5b6xmxyh6mikmk2zo7y56nz2yaowknf6lgaq5xkqqnpm.ipfs.w3s.link/Frame%2060%20(1).png)', backgroundSize: 'cover', backgroundPosition: 'center', color: 'white', fontFamily: 'Arial, sans-serif' }}>
-        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', backgroundColor: 'rgba(0,0,0,0.6)', padding: '20px', borderRadius: '10px' }}>
+      <div style={backgroundStyle}>
+        <div style={contentStyle}>
           <div style={{ fontSize: '28px', fontWeight: 'bold', marginBottom: '20px', textAlign: 'center', textShadow: '2px 2px 4px rgba(0,0,0,0.5)' }}>{game.away.name} @ {game.home.name}</div>
           <div style={{ fontSize: '24px', marginBottom: '10px' }}>{new Date(game.scheduled).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</div>
           <div style={{ fontSize: '20px' }}>Game {index + 1} of {games.length}</div>
