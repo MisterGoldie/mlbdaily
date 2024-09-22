@@ -103,6 +103,19 @@ async function fetchRankings(): Promise<any> {
   }
 }
 
+async function fetchBoxScore(gameId: string): Promise<any> {
+  const apiUrl = `https://api.sportradar.com/mlb/trial/v7/en/games/${gameId}/boxscore.json?api_key=${API_KEY}`
+  try {
+    const response = await fetch(apiUrl)
+    const data = await response.json()
+    console.log('Box score data:', JSON.stringify(data, null, 2))
+    return data
+  } catch (error) {
+    console.error('Error fetching box score:', error)
+    return null
+  }
+}
+
 function findTeamStanding(standings: TeamStanding[], teamId: string): TeamStanding | undefined {
   return standings.find(standing => standing.team.id === teamId)
 }
@@ -201,7 +214,10 @@ app.frame('/games/:index', async (c) => {
       })
     }
 
+    const boxScore = await fetchBoxScore(game.id)
+
     console.log('Game data:', JSON.stringify(game, null, 2))
+    console.log('Box score data:', JSON.stringify(boxScore, null, 2))
 
     const gameTime = new Date(game.scheduled).toLocaleTimeString('en-US', {
       hour: 'numeric',
@@ -210,21 +226,22 @@ app.frame('/games/:index', async (c) => {
       timeZone: 'America/New_York'
     })
 
-    const getScore = (game: Game) => {
-      const awayScore = game.away_score ?? (game.away as any).points ?? 0
-      const homeScore = game.home_score ?? (game.home as any).points ?? 0
-      return `${awayScore}-${homeScore}`
-    }
-
     let statusInfo = ''
-    if (game.status === 'scheduled') {
-      statusInfo = `${gameTime} ET`
-    } else if (game.status === 'inprogress' || game.status === 'live') {
-      const score = `Score: ${getScore(game)}`
-      statusInfo = `In Progress\nInning: ${game.inning || ''} ${game.inning_half || ''}\n${score}`
-    } else if (game.status === 'closed' || game.status === 'complete') {
-      const score = `Final: ${getScore(game)}`
-      statusInfo = score
+    if (boxScore) {
+      const awayScore = boxScore.away.runs || 0
+      const homeScore = boxScore.home.runs || 0
+      const inning = boxScore.game.inning || ''
+      const inningHalf = boxScore.game.inning_half || ''
+
+      if (game.status === 'scheduled') {
+        statusInfo = `${gameTime} ET`
+      } else if (game.status === 'inprogress' || game.status === 'live') {
+        statusInfo = `In Progress\nInning: ${inning} ${inningHalf}\nScore: ${awayScore}-${homeScore}`
+      } else if (game.status === 'closed' || game.status === 'complete') {
+        statusInfo = `Final: ${awayScore}-${homeScore}`
+      } else {
+        statusInfo = game.status
+      }
     } else {
       statusInfo = game.status
     }
