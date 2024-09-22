@@ -32,29 +32,6 @@ async function fetchMLBSchedule(): Promise<Game[] | null> {
   }
 }
 
-const backgroundStyle = {
-  display: 'flex',
-  flexDirection: 'column' as const,
-  alignItems: 'center',
-  justifyContent: 'center',
-  width: '100%',
-  height: '100%',
-  backgroundImage: 'url(https://bafybeibowmohuk5b6xmxyh6mikmk2zo7y56nz2yaowknf6lgaq5xkqqnpm.ipfs.w3s.link/Frame%2060%20(1).png)',
-  backgroundSize: 'cover',
-  backgroundPosition: 'center',
-  color: 'white',
-  fontFamily: 'Arial, sans-serif',
-}
-
-const contentStyle = {
-  display: 'flex',
-  flexDirection: 'column' as const,
-  alignItems: 'center',
-  backgroundColor: 'rgba(0,0,0,0.6)',
-  padding: '20px',
-  borderRadius: '10px',
-}
-
 app.frame('/', async (c) => {
   console.log('Root frame called')
   try {
@@ -62,13 +39,7 @@ app.frame('/', async (c) => {
 
     if (!games || games.length === 0) {
       return c.res({
-        image: (
-          <div style={backgroundStyle}>
-            <div style={contentStyle}>
-              <div style={{ fontSize: '32px', textAlign: 'center' }}>No MLB games scheduled for today.</div>
-            </div>
-          </div>
-        ),
+        image: 'https://placehold.co/600x400/png?text=No+MLB+Games+Today',
         intents: [
           <Button>Refresh</Button>
         ]
@@ -76,15 +47,7 @@ app.frame('/', async (c) => {
     }
 
     return c.res({
-      image: (
-        <div style={backgroundStyle}>
-          <div style={contentStyle}>
-            <div style={{ fontSize: '36px', fontWeight: 'bold', marginBottom: '20px', textShadow: '2px 2px 4px rgba(0,0,0,0.5)' }}>Today's MLB Games</div>
-            <div style={{ fontSize: '24px', marginBottom: '10px' }}>{games.length} game{games.length !== 1 ? 's' : ''} scheduled</div>
-            <div style={{ fontSize: '20px' }}>Tap 'View Games' to see details</div>
-          </div>
-        </div>
-      ),
+      image: 'https://placehold.co/600x400/png?text=MLB+Schedule',
       intents: [
         <Button action="/games/0">View Games</Button>,
       ],
@@ -92,13 +55,7 @@ app.frame('/', async (c) => {
   } catch (error) {
     console.error('Error in root frame:', error)
     return c.res({
-      image: (
-        <div style={backgroundStyle}>
-          <div style={contentStyle}>
-            <div style={{ fontSize: '32px', textAlign: 'center' }}>An error occurred. Please try again later.</div>
-          </div>
-        </div>
-      ),
+      image: 'https://placehold.co/600x400/png?text=Error+Occurred',
       intents: [
         <Button>Refresh</Button>
       ]
@@ -112,13 +69,7 @@ app.frame('/games/:index', async (c) => {
     const games = await fetchMLBSchedule()
     if (!games || games.length === 0) {
       return c.res({
-        image: (
-          <div style={backgroundStyle}>
-            <div style={contentStyle}>
-              <div style={{ fontSize: '32px', textAlign: 'center' }}>No MLB games scheduled for today.</div>
-            </div>
-          </div>
-        ),
+        image: 'https://placehold.co/600x400/png?text=No+MLB+Games+Today',
         intents: [
           <Button action="/">Back to Start</Button>
         ]
@@ -129,15 +80,7 @@ app.frame('/games/:index', async (c) => {
     const game = games[index]
 
     return c.res({
-      image: (
-        <div style={backgroundStyle}>
-          <div style={contentStyle}>
-            <div style={{ fontSize: '28px', fontWeight: 'bold', marginBottom: '20px', textAlign: 'center', textShadow: '2px 2px 4px rgba(0,0,0,0.5)' }}>{game.away.name} @ {game.home.name}</div>
-            <div style={{ fontSize: '24px', marginBottom: '10px' }}>{new Date(game.scheduled).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</div>
-            <div style={{ fontSize: '20px' }}>Game {index + 1} of {games.length}</div>
-          </div>
-        </div>
-      ),
+      image: `https://placehold.co/600x400/png?text=${encodeURIComponent(`${game.away.name} @ ${game.home.name}`)}`,
       intents: [
         index > 0 && <Button action={`/games/${index - 1}`}>Previous</Button>,
         index < games.length - 1 && <Button action={`/games/${index + 1}`}>Next</Button>,
@@ -147,13 +90,7 @@ app.frame('/games/:index', async (c) => {
   } catch (error) {
     console.error('Error in game frame:', error)
     return c.res({
-      image: (
-        <div style={backgroundStyle}>
-          <div style={contentStyle}>
-            <div style={{ fontSize: '32px', textAlign: 'center' }}>An error occurred. Please try again later.</div>
-          </div>
-        </div>
-      ),
+      image: 'https://placehold.co/600x400/png?text=Error+Occurred',
       intents: [
         <Button action="/">Back to Start</Button>
       ]
