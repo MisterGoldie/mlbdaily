@@ -199,12 +199,12 @@ app.frame('/games/:index', async (c) => {
       })
     }
 
-    console.log('Game data:', JSON.stringify(game, null, 2))
+    console.log('Full game data:', JSON.stringify(game, null, 2))
 
-    const awayTeam = game.away.name
-    const homeTeam = game.home.name
-    const awayScore = game.away.runs || 0
-    const homeScore = game.home.runs || 0
+    const awayTeam = game.away.name || 'Away Team'
+    const homeTeam = game.home.name || 'Home Team'
+    const awayScore = game.away.runs ?? 'N/A'
+    const homeScore = game.home.runs ?? 'N/A'
 
     let statusInfo = ''
     if (game.status === 'closed' || game.status === 'complete') {
@@ -222,6 +222,8 @@ app.frame('/games/:index', async (c) => {
     }
 
     const imageText = `${awayTeam} @ ${homeTeam}\n${statusInfo}\nGame ${index + 1} of ${games.length}`
+
+    console.log('Image text:', imageText)
 
     return c.res({
       image: `https://placehold.co/600x400/png?text=${encodeURIComponent(imageText)}`,
