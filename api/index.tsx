@@ -201,6 +201,8 @@ app.frame('/games/:index', async (c) => {
       })
     }
 
+    console.log('Game data:', JSON.stringify(game, null, 2))
+
     const gameTime = new Date(game.scheduled).toLocaleTimeString('en-US', {
       hour: 'numeric',
       minute: '2-digit',
@@ -208,9 +210,19 @@ app.frame('/games/:index', async (c) => {
       timeZone: 'America/New_York'
     })
 
-    let statusInfo = game.status === 'scheduled' ? `${gameTime} ET` : 
-                     game.status === 'inprogress' ? `In Progress\nInning: ${game.inning_half || ''} ${game.inning || ''}\nScore: ${game.away_score || 0}-${game.home_score || 0}` :
-                     `Final: ${game.away_score || 0}-${game.home_score || 0}`
+    let statusInfo = ''
+    if (game.status === 'scheduled') {
+      statusInfo = `${gameTime} ET`
+    } else if (game.status === 'inprogress' || game.status === 'complete') {
+      const score = `Score: ${game.away_score || 0}-${game.home_score || 0}`
+      if (game.status === 'inprogress') {
+        statusInfo = `In Progress\nInning: ${game.inning_half || ''} ${game.inning || ''}\n${score}`
+      } else {
+        statusInfo = `Final\n${score}`
+      }
+    } else {
+      statusInfo = game.status
+    }
 
     const awayStanding = findTeamStanding(standings, game.away.id)
     const homeStanding = findTeamStanding(standings, game.home.id)
