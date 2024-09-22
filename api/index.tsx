@@ -286,20 +286,17 @@ app.frame('/comparison/:index', async (c) => {
     const comparisonText = `
 ${game.away.name} vs ${game.home.name}
 
-Rec: ${formatRecord(awayStanding.win, awayStanding.loss)} | ${formatRecord(homeStanding.win, homeStanding.loss)}
-Win%: ${formatWinPercentage(awayStanding.win_p)} | ${formatWinPercentage(homeStanding.win_p)}
-Strk: ${awayStanding.streak} | ${homeStanding.streak}
-L10: ${awayStanding.last_10_won}-${awayStanding.last_10_lost} | ${homeStanding.last_10_won}-${homeStanding.last_10_lost}
-LgR: ${formatRank(awayStanding.league_rank)} | ${formatRank(homeStanding.league_rank)}
-DivR: ${formatRank(awayStanding.division_rank)} | ${formatRank(homeStanding.division_rank)}
-GB: ${awayStanding.games_back} | ${homeStanding.games_back}
+Record: ${formatRecord(awayStanding.win, awayStanding.loss)} | ${formatRecord(homeStanding.win, homeStanding.loss)}
+Win %: ${formatWinPercentage(awayStanding.win_p)} | ${formatWinPercentage(homeStanding.win_p)}
+Streak: ${awayStanding.streak} | ${homeStanding.streak}
+Last 10: ${awayStanding.last_10_won}-${awayStanding.last_10_lost} | ${homeStanding.last_10_won}-${homeStanding.last_10_lost}
+League Rank: ${formatRank(awayStanding.league_rank)} | ${formatRank(homeStanding.league_rank)}
+Division Rank: ${formatRank(awayStanding.division_rank)} | ${formatRank(homeStanding.division_rank)}
+Games Back: ${awayStanding.games_back} | ${homeStanding.games_back}
     `.trim()
 
-    const encodedText = encodeURIComponent(comparisonText)
-    const imageUrl = `https://placehold.co/1000x1000/png?text=${encodedText}&font=arial&font-size=16`
-
     return c.res({
-      image: imageUrl,
+      image: `https://placehold.co/1000x1000/png?text=${encodeURIComponent(comparisonText)}`,
       imageAspectRatio: '1:1',
       intents: [
         <Button action={`/games/${index}`}>Back to Game</Button>,
@@ -308,6 +305,80 @@ GB: ${awayStanding.games_back} | ${homeStanding.games_back}
     })
   } catch (error) {
     console.error('Error in comparison frame:', error)
+    return c.res({
+      image: 'https://placehold.co/1000x1000/png?text=Error+Occurred',
+      imageAspectRatio: '1:1',
+      intents: [
+        <Button action="/">Back to Start</Button>
+      ]
+    })
+  }
+})
+
+app.frame('/comparison2/:index', async (c) => {
+  console.log('Comparison2 frame called with index:', c.req.param('index'))
+  try {
+    const [games, standings, rankings] = await Promise.all([fetchMLBSchedule(), fetchStandings(), fetchRankings()])
+    
+    if (!games || games.length === 0 || !standings || !rankings) {
+      return c.res({
+        image: 'https://placehold.co/1000x1000/png?text=No+Data+Available',
+        imageAspectRatio: '1:1',
+        intents: [
+          <Button action="/">Back to Start</Button>
+        ]
+      })
+    }
+
+    const index = parseInt(c.req.param('index'))
+    const game = games[index]
+
+    if (!game) {
+      return c.res({
+        image: 'https://placehold.co/1000x1000/png?text=Game+Not+Found',
+        imageAspectRatio: '1:1',
+        intents: [
+          <Button action="/">Back to Start</Button>
+        ]
+      })
+    }
+
+    const updatedStandings = updateStandingsWithRankings(standings, rankings)
+    const awayStanding = findTeamStanding(updatedStandings, game.away.id)
+    const homeStanding = findTeamStanding(updatedStandings, game.home.id)
+
+    if (!awayStanding || !homeStanding) {
+      return c.res({
+        image: 'https://placehold.co/1000x1000/png?text=Team+Data+Not+Available',
+        imageAspectRatio: '1:1',
+        intents: [
+          <Button action={`/games/${index}`}>Back to Game</Button>,
+          <Button action="/">Back to Start</Button>
+        ]
+      })
+    }
+
+    const formatRank = (rank: number | undefined) => rank?.toString() || 'N/A'
+
+    const comparisonText2 = `
+${game.away.name} vs ${game.home.name}
+
+League Rank: ${formatRank(awayStanding.league_rank)} | ${formatRank(homeStanding.league_rank)}
+Division Rank: ${formatRank(awayStanding.division_rank)} | ${formatRank(homeStanding.division_rank)}
+Games Back: ${awayStanding.games_back} | ${homeStanding.games_back}
+    `.trim()
+
+    return c.res({
+      image: `https://placehold.co/1000x1000/png?text=${encodeURIComponent(comparisonText2)}`,
+      imageAspectRatio: '1:1',
+      intents: [
+        <Button action={`/comparison/${index}`}>Previous Stats</Button>,
+        <Button action={`/games/${index}`}>Back to Game</Button>,
+        <Button action="/">Back to Start</Button>
+      ],
+    })
+  } catch (error) {
+    console.error('Error in comparison2 frame:', error)
     return c.res({
       image: 'https://placehold.co/1000x1000/png?text=Error+Occurred',
       imageAspectRatio: '1:1',
