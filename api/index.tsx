@@ -111,23 +111,36 @@ function findTeamRanking(rankings: any, teamId: string): { leagueRank: number | 
   let leagueRank = null;
   let divisionRank = null;
 
+  console.log('Searching for team ID:', teamId);
+  console.log('Rankings data structure:', JSON.stringify(rankings, null, 2));
+
   if (rankings && rankings.league && rankings.league.season && rankings.league.season.leagues) {
     for (const league of rankings.league.season.leagues) {
-      const leagueTeam = league.teams.find((team: any) => team.id === teamId);
-      if (leagueTeam) {
-        leagueRank = leagueTeam.rank;
-        for (const division of league.divisions) {
-          const divisionTeam = division.teams.find((team: any) => team.id === teamId);
-          if (divisionTeam) {
-            divisionRank = divisionTeam.rank;
-            break;
+      if (league.teams && Array.isArray(league.teams)) {
+        const leagueTeam = league.teams.find((team: any) => team && team.id === teamId);
+        if (leagueTeam) {
+          leagueRank = leagueTeam.rank;
+          console.log(`Found league rank for team ${teamId}:`, leagueRank);
+          
+          if (league.divisions && Array.isArray(league.divisions)) {
+            for (const division of league.divisions) {
+              if (division.teams && Array.isArray(division.teams)) {
+                const divisionTeam = division.teams.find((team: any) => team && team.id === teamId);
+                if (divisionTeam) {
+                  divisionRank = divisionTeam.rank;
+                  console.log(`Found division rank for team ${teamId}:`, divisionRank);
+                  break;
+                }
+              }
+            }
           }
+          break;
         }
-        break;
       }
     }
   }
 
+  console.log(`Final ranks for team ${teamId}:`, { leagueRank, divisionRank });
   return { leagueRank, divisionRank };
 }
 
@@ -312,9 +325,21 @@ app.frame('/comparison2/:index', async (c) => {
   try {
     const [games, rankings] = await Promise.all([fetchMLBSchedule(), fetchRankings()])
     
-    if (!games || games.length === 0 || !rankings) {
+    if (!games || games.length === 0) {
+      console.log('No games data available');
       return c.res({
-        image: 'https://placehold.co/1000x1000/png?text=No+Data+Available&font-size=24',
+        image: 'https://placehold.co/1000x1000/png?text=No+Games+Data+Available&font-size=24',
+        imageAspectRatio: '1:1',
+        intents: [
+          <Button action="/">Back to Start</Button>
+        ]
+      })
+    }
+
+    if (!rankings) {
+      console.log('No rankings data available');
+      return c.res({
+        image: 'https://placehold.co/1000x1000/png?text=No+Rankings+Data+Available&font-size=24',
         imageAspectRatio: '1:1',
         intents: [
           <Button action="/">Back to Start</Button>
@@ -326,6 +351,7 @@ app.frame('/comparison2/:index', async (c) => {
     const game = games[index]
 
     if (!game) {
+      console.log('Game not found for index:', index);
       return c.res({
         image: 'https://placehold.co/1000x1000/png?text=Game+Not+Found&font-size=24',
         imageAspectRatio: '1:1',
@@ -334,6 +360,8 @@ app.frame('/comparison2/:index', async (c) => {
         ]
       })
     }
+
+    console.log('Game data:', JSON.stringify(game, null, 2));
 
     const awayRanking = findTeamRanking(rankings, game.away.id)
     const homeRanking = findTeamRanking(rankings, game.home.id)
@@ -351,6 +379,8 @@ Division Rank:
 ${game.away.name}: ${formatRank(awayRanking.divisionRank)}
 ${game.home.name}: ${formatRank(homeRanking.divisionRank)}
     `.trim()
+
+    console.log('Comparison text:', comparisonText);
 
     const imageUrl = `https://placehold.co/1000x1000/png?text=${encodeURIComponent(comparisonText)}&font-size=24`
 
