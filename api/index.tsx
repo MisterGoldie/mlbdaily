@@ -16,7 +16,6 @@ interface Game {
   away: { name: string };
   home: { name: string };
   scheduled: string;
-  // Add more fields as needed
 }
 
 async function fetchMLBSchedule(): Promise<Game[] | null> {
@@ -76,14 +75,20 @@ app.frame('/', async (c) => {
         color: 'white',
         fontFamily: 'Arial, sans-serif',
       }}>
-        <div style={{ fontSize: '36px', fontWeight: 'bold', marginBottom: '20px', textShadow: '2px 2px 4px rgba(0,0,0,0.5)' }}>
-          Today's MLB Games
-        </div>
-        <div style={{ fontSize: '24px', marginBottom: '10px', textAlign: 'center' }}>
-          {games.length} game{games.length !== 1 ? 's' : ''} scheduled
-        </div>
-        <div style={{ fontSize: '20px', marginBottom: '20px', textAlign: 'center' }}>
-          Tap 'View Games' to see details
+        <div style={{
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+        }}>
+          <div style={{ fontSize: '36px', fontWeight: 'bold', marginBottom: '20px', textShadow: '2px 2px 4px rgba(0,0,0,0.5)' }}>
+            Today's MLB Games
+          </div>
+          <div style={{ fontSize: '24px', marginBottom: '10px', textAlign: 'center' }}>
+            {games.length} game{games.length !== 1 ? 's' : ''} scheduled
+          </div>
+          <div style={{ fontSize: '20px', marginBottom: '20px', textAlign: 'center' }}>
+            Tap 'View Games' to see details
+          </div>
         </div>
       </div>
     ),
@@ -139,14 +144,20 @@ app.frame('/games/:index', async (c) => {
         fontFamily: 'Arial, sans-serif',
         padding: '20px',
       }}>
-        <div style={{ fontSize: '28px', fontWeight: 'bold', marginBottom: '20px', textAlign: 'center', textShadow: '2px 2px 4px rgba(0,0,0,0.5)' }}>
-          {game.away.name} @ {game.home.name}
-        </div>
-        <div style={{ fontSize: '24px', marginBottom: '10px', textAlign: 'center' }}>
-          {new Date(game.scheduled).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-        </div>
-        <div style={{ fontSize: '20px', marginBottom: '10px', textAlign: 'center' }}>
-          Game {index + 1} of {games.length}
+        <div style={{
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+        }}>
+          <div style={{ fontSize: '28px', fontWeight: 'bold', marginBottom: '20px', textAlign: 'center', textShadow: '2px 2px 4px rgba(0,0,0,0.5)' }}>
+            {game.away.name} @ {game.home.name}
+          </div>
+          <div style={{ fontSize: '24px', marginBottom: '10px', textAlign: 'center' }}>
+            {new Date(game.scheduled).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+          </div>
+          <div style={{ fontSize: '20px', marginBottom: '10px', textAlign: 'center' }}>
+            Game {index + 1} of {games.length}
+          </div>
         </div>
       </div>
     ),
