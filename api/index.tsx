@@ -15,10 +15,8 @@ interface Game {
   id: string;
   status: string;
   scheduled: string;
-  away: { name: string; id: string };
-  home: { name: string; id: string };
-  away_score?: number;
-  home_score?: number;
+  away: { name: string; id: string; runs: number };
+  home: { name: string; id: string; runs: number };
   inning?: number;
   inning_half?: string;
 }
@@ -99,19 +97,6 @@ async function fetchRankings(): Promise<any> {
     return rankingsCache
   } catch (error) {
     console.error('Error fetching rankings:', error)
-    return null
-  }
-}
-
-async function fetchBoxScore(gameId: string): Promise<any> {
-  const apiUrl = `https://api.sportradar.com/mlb/trial/v7/en/games/${gameId}/boxscore.json?api_key=${API_KEY}`
-  try {
-    const response = await fetch(apiUrl)
-    const data = await response.json()
-    console.log('Box score data:', JSON.stringify(data, null, 2))
-    return data
-  } catch (error) {
-    console.error('Error fetching box score:', error)
     return null
   }
 }
@@ -214,42 +199,26 @@ app.frame('/games/:index', async (c) => {
       })
     }
 
-    const boxScore = await fetchBoxScore(game.id)
-
     console.log('Game data:', JSON.stringify(game, null, 2))
-    console.log('Box score data:', JSON.stringify(boxScore, null, 2))
-
-    const gameTime = new Date(game.scheduled).toLocaleTimeString('en-US', {
-      hour: 'numeric',
-      minute: '2-digit',
-      hour12: true,
-      timeZone: 'America/New_York'
-    })
 
     let statusInfo = ''
-    if (boxScore && boxScore.game) {
-      const awayScore = boxScore.away?.runs ?? game.away_score ?? 0
-      const homeScore = boxScore.home?.runs ?? game.home_score ?? 0
-      const inning = boxScore.game.inning ?? ''
-      const inningHalf = boxScore.game.inning_half ?? ''
+    const awayScore = game.away.runs
+    const homeScore = game.home.runs
 
-      if (game.status === 'scheduled') {
-        statusInfo = `${gameTime} ET`
-      } else if (game.status === 'inprogress' || game.status === 'live') {
-        statusInfo = `In Progress\nInning: ${inning} ${inningHalf}\nScore: ${awayScore}-${homeScore}`
-      } else if (game.status === 'closed' || game.status === 'complete') {
-        statusInfo = `Final: ${awayScore}-${homeScore}`
-      } else {
-        statusInfo = game.status
-      }
+    if (game.status === 'scheduled') {
+      const gameTime = new Date(game.scheduled).toLocaleTimeString('en-US', {
+        hour: 'numeric',
+        minute: '2-digit',
+        hour12: true,
+        timeZone: 'America/New_York'
+      })
+      statusInfo = `${gameTime} ET`
+    } else if (game.status === 'inprogress' || game.status === 'live') {
+      statusInfo = `In Progress\nScore: ${awayScore}-${homeScore}`
+    } else if (game.status === 'closed' || game.status === 'complete') {
+      statusInfo = `Final: ${awayScore}-${homeScore}`
     } else {
-      // Fallback to using game data if box score is not available
-      statusInfo = game.status === 'scheduled' ? `${gameTime} ET` : 
-                   game.status === 'inprogress' || game.status === 'live' ? 
-                   `In Progress\nScore: ${game.away_score ?? 0}-${game.home_score ?? 0}` :
-                   game.status === 'closed' || game.status === 'complete' ? 
-                   `Final: ${game.away_score ?? 0}-${game.home_score ?? 0}` :
-                   game.status
+      statusInfo = `${game.status}\nScore: ${awayScore}-${homeScore}`
     }
 
     const awayStanding = findTeamStanding(standings, game.away.id)
