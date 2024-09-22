@@ -286,17 +286,17 @@ app.frame('/comparison/:index', async (c) => {
     const comparisonText = `
 ${game.away.name} vs ${game.home.name}
 
-Record: ${formatRecord(awayStanding.win, awayStanding.loss)} | ${formatRecord(homeStanding.win, homeStanding.loss)}
-Win %: ${formatWinPercentage(awayStanding.win_p)} | ${formatWinPercentage(homeStanding.win_p)}
-Streak: ${awayStanding.streak} | ${homeStanding.streak}
-Last 10: ${awayStanding.last_10_won}-${awayStanding.last_10_lost} | ${homeStanding.last_10_won}-${homeStanding.last_10_lost}
-Lg Rank: ${formatRank(awayStanding.league_rank)} | ${formatRank(homeStanding.league_rank)}
-Div Rank: ${formatRank(awayStanding.division_rank)} | ${formatRank(homeStanding.division_rank)}
-Games Back: ${awayStanding.games_back} | ${homeStanding.games_back}
+Rec: ${formatRecord(awayStanding.win, awayStanding.loss)} | ${formatRecord(homeStanding.win, homeStanding.loss)}
+Win%: ${formatWinPercentage(awayStanding.win_p)} | ${formatWinPercentage(homeStanding.win_p)}
+Strk: ${awayStanding.streak} | ${homeStanding.streak}
+L10: ${awayStanding.last_10_won}-${awayStanding.last_10_lost} | ${homeStanding.last_10_won}-${homeStanding.last_10_lost}
+LgR: ${formatRank(awayStanding.league_rank)} | ${formatRank(homeStanding.league_rank)}
+DivR: ${formatRank(awayStanding.division_rank)} | ${formatRank(homeStanding.division_rank)}
+GB: ${awayStanding.games_back} | ${homeStanding.games_back}
     `.trim()
 
     const encodedText = encodeURIComponent(comparisonText)
-    const imageUrl = `https://placehold.co/1000x1000/png?text=${encodedText}&font=arial&font-size=28`
+    const imageUrl = `https://placehold.co/1000x1000/png?text=${encodedText}&font=arial&font-size=24`
 
     return c.res({
       image: imageUrl,
