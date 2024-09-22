@@ -243,7 +243,7 @@ app.frame('/comparison/:index', async (c) => {
     
     if (!games || games.length === 0 || !standings || !rankings) {
       return c.res({
-        image: 'https://placehold.co/1000x1000/png?text=No+Data+Available',
+        image: 'https://placehold.co/1000x1000/png?text=No+Data+Available&font-size=24',
         imageAspectRatio: '1:1',
         intents: [
           <Button action="/">Back to Start</Button>
@@ -256,7 +256,7 @@ app.frame('/comparison/:index', async (c) => {
 
     if (!game) {
       return c.res({
-        image: 'https://placehold.co/1000x1000/png?text=Game+Not+Found',
+        image: 'https://placehold.co/1000x1000/png?text=Game+Not+Found&font-size=24',
         imageAspectRatio: '1:1',
         intents: [
           <Button action="/">Back to Start</Button>
@@ -270,7 +270,7 @@ app.frame('/comparison/:index', async (c) => {
 
     if (!awayStanding || !homeStanding) {
       return c.res({
-        image: 'https://placehold.co/1000x1000/png?text=Team+Data+Not+Available',
+        image: 'https://placehold.co/1000x1000/png?text=Team+Data+Not+Available&font-size=24',
         imageAspectRatio: '1:1',
         intents: [
           <Button action={`/games/${index}`}>Back to Game</Button>,
@@ -294,8 +294,10 @@ Record: ${formatRecord(homeStanding.win, homeStanding.loss)}
 Win %: ${formatWinPercentage(homeStanding.win_p)}
     `.trim()
 
+    const imageUrl = `https://placehold.co/1000x1000/png?text=${encodeURIComponent(comparisonText)}&font-size=24`
+
     return c.res({
-      image: `https://placehold.co/1000x1000/png?text=${encodeURIComponent(comparisonText)}`,
+      image: imageUrl,
       imageAspectRatio: '1:1',
       intents: [
         <Button action={`/comparison2/${index}`}>More Stats</Button>,
@@ -306,11 +308,11 @@ Win %: ${formatWinPercentage(homeStanding.win_p)}
   } catch (error) {
     console.error('Error in comparison frame:', error)
     return c.res({
-      image: 'https://placehold.co/1000x1000/png?text=Error+Occurred',
-        imageAspectRatio: '1:1',
-        intents: [
-          <Button action="/">Back to Start</Button>
-        ]
+      image: 'https://placehold.co/1000x1000/png?text=Error+Occurred&font-size=24',
+      imageAspectRatio: '1:1',
+      intents: [
+        <Button action="/">Back to Start</Button>
+      ]
     })
   }
 })
