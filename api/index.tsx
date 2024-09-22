@@ -23,12 +23,6 @@ interface Game {
   inning_half?: string;
 }
 
-interface TeamStanding {
-  id: string;
-  wins: number;
-  losses: number;
-}
-
 async function fetchMLBSchedule(): Promise<Game[] | null> {
   const date = new Date().toISOString().split('T')[0].replace(/-/g, '/')
   const apiUrl = `https://api.sportradar.com/mlb/trial/v7/en/games/${date}/schedule.json?api_key=${API_KEY}`
@@ -41,37 +35,6 @@ async function fetchMLBSchedule(): Promise<Game[] | null> {
     console.error('Error fetching schedule:', error)
     return null
   }
-}
-
-async function fetchStandings(): Promise<{[key: string]: TeamStanding}> {
-  const apiUrl = `https://api.sportradar.us/mlb/trial/v7/en/seasons/2024/REG/standings.json?api_key=${API_KEY}`
-
-  try {
-    const response = await fetch(apiUrl)
-    const data = await response.json()
-    const standings: {[key: string]: TeamStanding} = {}
-    data.leagues.forEach((league: any) => {
-      league.divisions.forEach((division: any) => {
-        division.teams.forEach((team: any) => {
-          standings[team.id] = {
-            id: team.id,
-            wins: team.win,
-            losses: team.loss
-          }
-        })
-      })
-    })
-    return standings
-  } catch (error) {
-    console.error('Error fetching standings:', error)
-    return {}
-  }
-}
-
-async function fetchTeamLogos(): Promise<{[key: string]: string}> {
-  // For now, we'll return an empty object instead of fetching logos
-  console.log('Logo fetching is currently disabled due to API issues')
-  return {}
 }
 
 app.frame('/', async (c) => {
@@ -108,7 +71,7 @@ app.frame('/', async (c) => {
 app.frame('/games/:index', async (c) => {
   console.log('Game frame called with index:', c.req.param('index'))
   try {
-    const [games, standings] = await Promise.all([fetchMLBSchedule(), fetchStandings()])
+    const games = await fetchMLBSchedule()
     if (!games || games.length === 0) {
       return c.res({
         image: 'https://placehold.co/600x400/png?text=No+MLB+Games+Today',
@@ -137,17 +100,11 @@ app.frame('/games/:index', async (c) => {
       timeZone: 'America/New_York'
     })
 
-    const awayStanding = standings[game.away.id]
-    const homeStanding = standings[game.home.id]
-
     let statusInfo = game.status === 'scheduled' ? `${gameTime} ET` : 
                      game.status === 'inprogress' ? `In Progress\nInning: ${game.inning_half || ''} ${game.inning || ''}\nScore: ${game.away_score || 0}-${game.home_score || 0}` :
                      `Final: ${game.away_score || 0}-${game.home_score || 0}`
 
-    const awayRecord = awayStanding ? `(${awayStanding.wins}-${awayStanding.losses})` : '(0-0)'
-    const homeRecord = homeStanding ? `(${homeStanding.wins}-${homeStanding.losses})` : '(0-0)'
-
-    const imageText = `${game.away.name} ${awayRecord} @ ${game.home.name} ${homeRecord}\n${statusInfo}\nGame ${index + 1} of ${games.length}`
+    const imageText = `${game.away.name} @ ${game.home.name}\n${statusInfo}\nGame ${index + 1} of ${games.length}`
 
     return c.res({
       image: `https://placehold.co/600x400/png?text=${encodeURIComponent(imageText)}`,
