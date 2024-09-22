@@ -21,17 +21,8 @@ interface Game {
   home_score?: number;
   inning?: number;
   inning_half?: string;
-  venue_id?: string;
+  venue?: { name: string; city: string; state: string };
 }
-
-interface Venue {
-  id: string;
-  name: string;
-  city: string;
-  state: string;
-}
-
-let venuesCache: Venue[] | null = null;
 
 async function fetchMLBSchedule(): Promise<Game[] | null> {
   const date = new Date().toISOString().split('T')[0].replace(/-/g, '/')
@@ -47,24 +38,20 @@ async function fetchMLBSchedule(): Promise<Game[] | null> {
   }
 }
 
-async function fetchVenues(): Promise<Venue[] | null> {
-  if (venuesCache) return venuesCache;
-
-  const apiUrl = `https://api.sportradar.com/mlb/trial/v7/en/league/venues.json?api_key=${API_KEY}`
+async function fetchGameSummary(gameId: string): Promise<Game | null> {
+  const apiUrl = `https://api.sportradar.com/mlb/trial/v7/en/games/${gameId}/summary.json?api_key=${API_KEY}`
 
   try {
     const response = await fetch(apiUrl)
     const data = await response.json()
-    venuesCache = data.venues
-    return venuesCache
+    return {
+      ...data,
+      venue: data.venue
+    }
   } catch (error) {
-    console.error('Error fetching venues:', error)
+    console.error('Error fetching game summary:', error)
     return null
   }
-}
-
-function findVenue(venues: Venue[], venueId: string): Venue | undefined {
-  return venues.find(venue => venue.id === venueId)
 }
 
 app.frame('/', async (c) => {
@@ -101,20 +88,10 @@ app.frame('/', async (c) => {
 app.frame('/games/:index', async (c) => {
   console.log('Game frame called with index:', c.req.param('index'))
   try {
-    const [games, venues] = await Promise.all([fetchMLBSchedule(), fetchVenues()])
-    
+    const games = await fetchMLBSchedule()
     if (!games || games.length === 0) {
       return c.res({
         image: 'https://placehold.co/600x400/png?text=No+MLB+Games+Today',
-        intents: [
-          <Button action="/">Back to Start</Button>
-        ]
-      })
-    }
-
-    if (!venues) {
-      return c.res({
-        image: 'https://placehold.co/600x400/png?text=Error+Fetching+Venues',
         intents: [
           <Button action="/">Back to Start</Button>
         ]
@@ -133,6 +110,9 @@ app.frame('/games/:index', async (c) => {
       })
     }
 
+    // Fetch game summary to get venue information
+    const gameSummary = await fetchGameSummary(game.id)
+
     const gameTime = new Date(game.scheduled).toLocaleTimeString('en-US', {
       hour: 'numeric',
       minute: '2-digit',
@@ -144,9 +124,8 @@ app.frame('/games/:index', async (c) => {
                      game.status === 'inprogress' ? `In Progress\nInning: ${game.inning_half || ''} ${game.inning || ''}\nScore: ${game.away_score || 0}-${game.home_score || 0}` :
                      `Final: ${game.away_score || 0}-${game.home_score || 0}`
 
-    const venue = game.venue_id ? findVenue(venues, game.venue_id) : undefined
-    let locationInfo = venue 
-      ? `${venue.name}, ${venue.city}, ${venue.state}`
+    let locationInfo = gameSummary && gameSummary.venue 
+      ? `${gameSummary.venue.name}, ${gameSummary.venue.city}, ${gameSummary.venue.state}`
       : 'Location not available'
 
     const imageText = `${game.away.name} @ ${game.home.name}\n${statusInfo}\n${locationInfo}\nGame ${index + 1} of ${games.length}`
