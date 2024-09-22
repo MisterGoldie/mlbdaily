@@ -135,15 +135,16 @@ app.frame('/games/:index', async (c) => {
       statusInfo = `Scheduled: ${gameTime} ET`
     }
 
-    // Always include the game number information
     const gameNumberInfo = `Game ${index + 1} of ${games.length}`
 
-    const imageText = `${awayTeam} @ ${homeTeam}%0A${statusInfo}%0A${gameNumberInfo}`
+    // Use '|' as a delimiter for line breaks
+    const imageText = `${awayTeam}|@|${homeTeam}|${statusInfo}|${gameNumberInfo}`
 
     console.log('Image text:', imageText)
 
     return c.res({
-      image: `https://placehold.co/1200x630/png?text=${imageText}&font-size=36`,
+      // Increase image size, reduce font size, use word-wrap and line-height
+      image: `https://placehold.co/1200x630/png?text=${encodeURIComponent(imageText)}&font-size=30&word-wrap=true&line-height=1.5`,
       intents: [
         <Button action={`/comparison/${index}`}>Team Comparison</Button>,
         index > 0 && <Button action={`/games/${index - 1}`}>Previous</Button>,
