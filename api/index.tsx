@@ -94,7 +94,7 @@ app.frame('/games/:index', async (c) => {
     
     if (!games || games.length === 0) {
       return c.res({
-        image: 'https://placehold.co/600x400/png?text=No+Data+Available',
+        image: 'https://placehold.co/1200x630/png?text=No+Data+Available&font-size=32',
         intents: [
           <Button action="/">Back to Start</Button>
         ]
@@ -106,7 +106,7 @@ app.frame('/games/:index', async (c) => {
 
     if (!game) {
       return c.res({
-        image: 'https://placehold.co/600x400/png?text=Game+Not+Found',
+        image: 'https://placehold.co/1200x630/png?text=Game+Not+Found&font-size=32',
         intents: [
           <Button action="/">Back to Start</Button>
         ]
@@ -135,15 +135,13 @@ app.frame('/games/:index', async (c) => {
       statusInfo = `Scheduled: ${gameTime} ET`
     }
 
-    // Add game number out of total games to statusInfo
-    statusInfo += `\nGame ${index + 1} of ${games.length}`
-
-    const imageText = `${awayTeam} @ ${homeTeam}\n${statusInfo}`
+    const imageText = `${awayTeam} @ ${homeTeam}%0A${statusInfo}%0AGame ${index + 1} of ${games.length}`
 
     console.log('Image text:', imageText)
 
     return c.res({
-      image: `https://placehold.co/600x400/png?text=${encodeURIComponent(imageText)}`,
+      // Increased image size, reduced font size, and used line breaks
+      image: `https://placehold.co/1200x630/png?text=${imageText}&font-size=36`,
       intents: [
         <Button action={`/comparison/${index}`}>Team Comparison</Button>,
         index > 0 && <Button action={`/games/${index - 1}`}>Previous</Button>,
@@ -154,7 +152,7 @@ app.frame('/games/:index', async (c) => {
   } catch (error) {
     console.error('Error in game frame:', error)
     return c.res({
-      image: 'https://placehold.co/600x400/png?text=Error+Occurred',
+      image: 'https://placehold.co/1200x630/png?text=Error+Occurred&font-size=32',
       intents: [
         <Button action="/">Back to Start</Button>
       ]
