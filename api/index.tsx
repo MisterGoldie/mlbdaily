@@ -10,7 +10,6 @@ export const app = new Frog({
 })
 
 const API_KEY = 'FBKXX1hlX9Uo4vJ1y7Lcv7A9ScCFJSTpZwpXZdbX'
-const BACKGROUND_IMAGE = 'https://bafybeibowmohuk5b6xmxyh6mikmk2zo7y56nz2yaowknf6lgaq5xkqqnpm.ipfs.w3s.link/Frame%2060%20(1).png'
 
 interface Game {
   id: string;
@@ -33,19 +32,9 @@ async function fetchMLBSchedule(): Promise<Game[] | null> {
   }
 }
 
-const baseStyles = {
-  backgroundImage: `url(${BACKGROUND_IMAGE})`,
-  backgroundSize: 'cover',
-  width: '100%',
-  height: '100%',
-  display: 'flex',
-  flexDirection: 'column',
-  justifyContent: 'center',
-  alignItems: 'center',
-  color: 'white',
-  fontSize: 32,
-  fontWeight: 'bold',
-  textAlign: 'center',
+function generateImageUrl(text: string): string {
+  const encodedText = encodeURIComponent(text)
+  return `https://placehold.co/600x400/1e3a8a/ffffff?text=${encodedText}`
 }
 
 app.frame('/', async (c) => {
@@ -55,13 +44,7 @@ app.frame('/', async (c) => {
 
     if (!games || games.length === 0) {
       return c.res({
-        image: (
-          <div style={baseStyles}>
-            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-              <div>No MLB Games Today</div>
-            </div>
-          </div>
-        ),
+        image: generateImageUrl('No MLB Games Today'),
         intents: [
           <Button>Refresh</Button>
         ]
@@ -69,14 +52,7 @@ app.frame('/', async (c) => {
     }
 
     return c.res({
-      image: (
-        <div style={baseStyles}>
-          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-            <div>MLB Schedule</div>
-            <div>{games.length} Games Today</div>
-          </div>
-        </div>
-      ),
+      image: generateImageUrl(`MLB Schedule\n${games.length} Games Today`),
       intents: [
         <Button action="/games/0">View Games</Button>,
       ],
@@ -84,13 +60,7 @@ app.frame('/', async (c) => {
   } catch (error) {
     console.error('Error in root frame:', error)
     return c.res({
-      image: (
-        <div style={baseStyles}>
-          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-            <div>Error Occurred</div>
-          </div>
-        </div>
-      ),
+      image: generateImageUrl('Error Occurred'),
       intents: [
         <Button>Refresh</Button>
       ]
@@ -104,13 +74,7 @@ app.frame('/games/:index', async (c) => {
     const games = await fetchMLBSchedule()
     if (!games || games.length === 0) {
       return c.res({
-        image: (
-          <div style={baseStyles}>
-            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-              <div>No MLB Games Today</div>
-            </div>
-          </div>
-        ),
+        image: generateImageUrl('No MLB Games Today'),
         intents: [
           <Button action="/">Back to Start</Button>
         ]
@@ -127,16 +91,10 @@ app.frame('/games/:index', async (c) => {
       timeZone: 'America/New_York'
     })
 
+    const imageText = `${game.away.name} @ ${game.home.name}\n${gameTime} ET\nGame ${index + 1} of ${games.length}`
+
     return c.res({
-      image: (
-        <div style={baseStyles}>
-          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-            <div>{game.away.name} @ {game.home.name}</div>
-            <div>{gameTime} ET</div>
-            <div>Game {index + 1} of {games.length}</div>
-          </div>
-        </div>
-      ),
+      image: generateImageUrl(imageText),
       intents: [
         index > 0 && <Button action={`/games/${index - 1}`}>Previous</Button>,
         index < games.length - 1 && <Button action={`/games/${index + 1}`}>Next</Button>,
@@ -146,13 +104,7 @@ app.frame('/games/:index', async (c) => {
   } catch (error) {
     console.error('Error in game frame:', error)
     return c.res({
-      image: (
-        <div style={baseStyles}>
-          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-            <div>Error Occurred</div>
-          </div>
-        </div>
-      ),
+      image: generateImageUrl('Error Occurred'),
       intents: [
         <Button action="/">Back to Start</Button>
       ]
