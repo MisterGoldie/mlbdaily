@@ -17,6 +17,8 @@ interface Game {
   scheduled: string;
   home: {
     name: string;
+    market: string;
+    abbr: string;
     id: string;
     runs: number;
     hits: number;
@@ -24,6 +26,8 @@ interface Game {
   };
   away: {
     name: string;
+    market: string;
+    abbr: string;
     id: string;
     runs: number;
     hits: number;
@@ -39,7 +43,13 @@ async function fetchMLBSchedule(): Promise<Game[] | null> {
     const response = await fetch(apiUrl)
     const data = await response.json()
     console.log('Full API response:', JSON.stringify(data, null, 2))
-    return data.league.games
+    
+    if (data.league && Array.isArray(data.league.games)) {
+      return data.league.games.map((item: { game: Game }) => item.game);
+    } else {
+      console.error('Unexpected API response structure:', data)
+      return null
+    }
   } catch (error) {
     console.error('Error fetching boxscore:', error)
     return null
@@ -105,18 +115,17 @@ app.frame('/games/:index', async (c) => {
 
     console.log('Full game data:', JSON.stringify(game, null, 2))
 
-    // Safely access properties with fallback values
-    const awayTeam = game.away?.name || 'Away Team'
-    const homeTeam = game.home?.name || 'Home Team'
-    const awayScore = game.away?.runs ?? 'N/A'
-    const homeScore = game.home?.runs ?? 'N/A'
+    const awayTeam = `${game.away.market} ${game.away.name}`
+    const homeTeam = `${game.home.market} ${game.home.name}`
+    const awayScore = game.away.runs
+    const homeScore = game.home.runs
 
-    let statusInfo = 'Status: Unknown'
+    let statusInfo = ''
     if (game.status === 'closed' || game.status === 'complete') {
       statusInfo = `Final: ${awayScore}-${homeScore}`
     } else if (game.status === 'inprogress' || game.status === 'live') {
       statusInfo = `In Progress: ${awayScore}-${homeScore}`
-    } else if (game.scheduled) {
+    } else {
       const gameTime = new Date(game.scheduled).toLocaleTimeString('en-US', {
         hour: 'numeric',
         minute: '2-digit',
@@ -150,6 +159,10 @@ app.frame('/games/:index', async (c) => {
   }
 })
 
+
+
+// Continuing from the previous code...
+
 app.frame('/comparison/:index', async (c) => {
   console.log('Comparison frame called with index:', c.req.param('index'))
   try {
@@ -178,19 +191,23 @@ app.frame('/comparison/:index', async (c) => {
       })
     }
 
-    const awayTeam = game.away
-    const homeTeam = game.home
+    const awayTeam = `${game.away.market} ${game.away.name}`
+    const homeTeam = `${game.home.market} ${game.home.name}`
 
     const comparisonText = `
-${awayTeam.name} vs ${homeTeam.name}
+${awayTeam} vs ${homeTeam}
 
 Runs:
-${awayTeam.name}: ${awayTeam.runs}
-${homeTeam.name}: ${homeTeam.runs}
+${awayTeam}: ${game.away.runs}
+${homeTeam}: ${game.home.runs}
 
 Hits:
-${awayTeam.name}: ${awayTeam.hits}
-${homeTeam.name}: ${homeTeam.hits}
+${awayTeam}: ${game.away.hits}
+${homeTeam}: ${game.home.hits}
+
+Errors:
+${awayTeam}: ${game.away.errors}
+${homeTeam}: ${game.home.errors}
     `.trim()
 
     const imageUrl = `https://placehold.co/1000x1000/png?text=${encodeURIComponent(comparisonText)}&font-size=24`
@@ -248,89 +265,19 @@ app.frame('/comparison2/:index', async (c) => {
 
     console.log('Game data:', JSON.stringify(game, null, 2))
 
-    const awayTeam = game.away
-    const homeTeam = game.home
+    const awayTeam = `${game.away.market} ${game.away.name}`
+    const homeTeam = `${game.home.market} ${game.home.name}`
 
     const comparisonText = `
-${awayTeam.name} vs ${homeTeam.name}
-
-Errors:
-${awayTeam.name}: ${awayTeam.errors}
-${homeTeam.name}: ${homeTeam.errors}
-
-Game Status: ${game.status}
-    `.trim()
-
-    console.log('Comparison text:', comparisonText)
-
-    const imageUrl = `https://placehold.co/1000x1000/png?text=${encodeURIComponent(comparisonText)}&font-size=24`
-
-    return c.res({
-      image: imageUrl,
-      imageAspectRatio: '1:1',
-      intents: [
-        <Button action={`/comparison/${index}`}>Previous Stats</Button>,
-        <Button action={`/games/${index}`}>Back to Game</Button>,
-        <Button action="/">Back to Start</Button>
-      ],
-    })
-  } catch (error) {
-    console.error('Error in comparison2 frame:', error)
-    return c.res({
-      image: 'https://placehold.co/1000x1000/png?text=Error+Occurred&font-size=24',
-      imageAspectRatio: '1:1',
-      intents: [
-        <Button action="/">Back to Start</Button>
-      ]
-    })
-  }
-})
-
-app.frame('/comparison2/:index', async (c) => {
-  console.log('Comparison2 frame called with index:', c.req.param('index'))
-  try {
-    const games = await fetchMLBSchedule()
-    
-    if (!games || games.length === 0) {
-      console.log('No games data available')
-      return c.res({
-        image: 'https://placehold.co/1000x1000/png?text=No+Games+Data+Available&font-size=24',
-        imageAspectRatio: '1:1',
-        intents: [
-          <Button action="/">Back to Start</Button>
-        ]
-      })
-    }
-
-    const index = parseInt(c.req.param('index'))
-    const game = games[index]
-
-    if (!game) {
-      console.log('Game not found for index:', index)
-      return c.res({
-        image: 'https://placehold.co/1000x1000/png?text=Game+Not+Found&font-size=24',
-        imageAspectRatio: '1:1',
-        intents: [
-          <Button action="/">Back to Start</Button>
-        ]
-      })
-    }
-
-    console.log('Game data:', JSON.stringify(game, null, 2))
-
-    const awayTeam = game.away
-    const homeTeam = game.home
-
-    const comparisonText = `
-${awayTeam.name} vs ${homeTeam.name}
-
-Errors:
-${awayTeam.name}: ${awayTeam.errors}
-${homeTeam.name}: ${homeTeam.errors}
+${awayTeam} vs ${homeTeam}
 
 Game Status: ${game.status}
 
 Scheduled Time: ${new Date(game.scheduled).toLocaleString()}
+
+Team Abbreviations:
+${awayTeam}: ${game.away.abbr}
+${homeTeam}: ${game.home.abbr}
     `.trim()
 
     console.log('Comparison text:', comparisonText)
