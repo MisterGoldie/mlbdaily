@@ -32,9 +32,12 @@ interface TeamStanding {
   streak: string;
   last_10_won: number;
   last_10_lost: number;
+  league_rank?: number;
+  division_rank?: number;
 }
 
 let standingsCache: TeamStanding[] | null = null;
+let rankingsCache: any = null;
 
 async function fetchMLBSchedule(): Promise<Game[] | null> {
   const date = new Date().toISOString().split('T')[0].replace(/-/g, '/')
@@ -80,8 +83,61 @@ async function fetchStandings(): Promise<TeamStanding[] | null> {
   }
 }
 
+async function fetchRankings(): Promise<any> {
+  if (rankingsCache) return rankingsCache;
+
+  const apiUrl = `https://api.sportradar.com/mlb/trial/v7/en/seasons/2024/REG/rankings.json?api_key=${API_KEY}`
+
+  try {
+    const response = await fetch(apiUrl)
+    const data = await response.json()
+    console.log('Rankings data:', JSON.stringify(data, null, 2))
+    rankingsCache = data
+    return rankingsCache
+  } catch (error) {
+    console.error('Error fetching rankings:', error)
+    return null
+  }
+}
+
 function findTeamStanding(standings: TeamStanding[], teamId: string): TeamStanding | undefined {
   return standings.find(standing => standing.team.id === teamId)
+}
+
+function updateStandingsWithRankings(standings: TeamStanding[], rankings: any): TeamStanding[] {
+  if (!rankings || !rankings.league || !rankings.league.season || !rankings.league.season.leagues) {
+    console.error('Rankings data is not in the expected format')
+    return standings
+  }
+
+  return standings.map(standing => {
+    let leagueRank, divisionRank
+
+    for (const league of rankings.league.season.leagues) {
+      if (!league.teams) continue
+      const leagueTeam = league.teams.find((team: any) => team.id === standing.team.id)
+      if (leagueTeam) {
+        leagueRank = leagueTeam.rank
+        if (league.divisions) {
+          for (const division of league.divisions) {
+            if (!division.teams) continue
+            const divisionTeam = division.teams.find((team: any) => team.id === standing.team.id)
+            if (divisionTeam) {
+              divisionRank = divisionTeam.rank
+              break
+            }
+          }
+        }
+        break
+      }
+    }
+
+    return {
+      ...standing,
+      league_rank: leagueRank,
+      division_rank: divisionRank
+    }
+  })
 }
 
 app.frame('/', async (c) => {
@@ -183,9 +239,9 @@ app.frame('/games/:index', async (c) => {
 app.frame('/comparison/:index', async (c) => {
   console.log('Comparison frame called with index:', c.req.param('index'))
   try {
-    const [games, standings] = await Promise.all([fetchMLBSchedule(), fetchStandings()])
+    const [games, standings, rankings] = await Promise.all([fetchMLBSchedule(), fetchStandings(), fetchRankings()])
     
-    if (!games || games.length === 0 || !standings) {
+    if (!games || games.length === 0 || !standings || !rankings) {
       return c.res({
         image: 'https://placehold.co/600x400/png?text=No+Data+Available',
         intents: [
@@ -206,8 +262,9 @@ app.frame('/comparison/:index', async (c) => {
       })
     }
 
-    const awayStanding = findTeamStanding(standings, game.away.id)
-    const homeStanding = findTeamStanding(standings, game.home.id)
+    const updatedStandings = updateStandingsWithRankings(standings, rankings)
+    const awayStanding = findTeamStanding(updatedStandings, game.away.id)
+    const homeStanding = findTeamStanding(updatedStandings, game.home.id)
 
     if (!awayStanding || !homeStanding) {
       return c.res({
@@ -224,7 +281,9 @@ app.frame('/comparison/:index', async (c) => {
       `Win %: ${awayStanding.win_p.toFixed(3)} vs ${homeStanding.win_p.toFixed(3)}\n` +
       `Games Back: ${awayStanding.games_back} vs ${homeStanding.games_back}\n` +
       `Streak: ${awayStanding.streak} vs ${homeStanding.streak}\n` +
-      `Last 10: ${awayStanding.last_10_won}-${awayStanding.last_10_lost} vs ${homeStanding.last_10_won}-${homeStanding.last_10_lost}`
+      `Last 10: ${awayStanding.last_10_won}-${awayStanding.last_10_lost} vs ${homeStanding.last_10_won}-${homeStanding.last_10_lost}\n` +
+      `League Rank: ${awayStanding.league_rank || 'N/A'} vs ${homeStanding.league_rank || 'N/A'}\n` +
+      `Division Rank: ${awayStanding.division_rank || 'N/A'} vs ${homeStanding.division_rank || 'N/A'}`
 
     return c.res({
       image: `https://placehold.co/600x400/png?text=${encodeURIComponent(comparisonText)}`,
