@@ -176,9 +176,9 @@ app.frame('/', async (c) => {
 app.frame('/games/:index', async (c) => {
   console.log('Game frame called with index:', c.req.param('index'))
   try {
-    const [games, standings] = await Promise.all([fetchMLBSchedule(), fetchStandings()])
+    const games = await fetchMLBSchedule()
     
-    if (!games || games.length === 0 || !standings) {
+    if (!games || games.length === 0) {
       return c.res({
         image: 'https://placehold.co/600x400/png?text=No+Data+Available',
         intents: [
@@ -201,33 +201,27 @@ app.frame('/games/:index', async (c) => {
 
     console.log('Game data:', JSON.stringify(game, null, 2))
 
-    let statusInfo = ''
-    const awayScore = game.away.runs
-    const homeScore = game.home.runs
+    const awayTeam = game.away.name
+    const homeTeam = game.home.name
+    const awayScore = game.away.runs || 0
+    const homeScore = game.home.runs || 0
 
-    if (game.status === 'scheduled') {
+    let statusInfo = ''
+    if (game.status === 'closed' || game.status === 'complete') {
+      statusInfo = `Final: ${awayScore}-${homeScore}`
+    } else if (game.status === 'inprogress' || game.status === 'live') {
+      statusInfo = `In Progress: ${awayScore}-${homeScore}`
+    } else {
       const gameTime = new Date(game.scheduled).toLocaleTimeString('en-US', {
         hour: 'numeric',
         minute: '2-digit',
         hour12: true,
         timeZone: 'America/New_York'
       })
-      statusInfo = `${gameTime} ET`
-    } else if (game.status === 'inprogress' || game.status === 'live') {
-      statusInfo = `In Progress\nScore: ${awayScore}-${homeScore}`
-    } else if (game.status === 'closed' || game.status === 'complete') {
-      statusInfo = `Final: ${awayScore}-${homeScore}`
-    } else {
-      statusInfo = `${game.status}\nScore: ${awayScore}-${homeScore}`
+      statusInfo = `Scheduled: ${gameTime} ET`
     }
 
-    const awayStanding = findTeamStanding(standings, game.away.id)
-    const homeStanding = findTeamStanding(standings, game.home.id)
-
-    const awayRecord = awayStanding ? `${awayStanding.win}-${awayStanding.loss}` : 'N/A'
-    const homeRecord = homeStanding ? `${homeStanding.win}-${homeStanding.loss}` : 'N/A'
-
-    const imageText = `${game.away.name} (${awayRecord}) @ ${game.home.name} (${homeRecord})\n${statusInfo}\nGame ${index + 1} of ${games.length}`
+    const imageText = `${awayTeam} @ ${homeTeam}\n${statusInfo}\nGame ${index + 1} of ${games.length}`
 
     return c.res({
       image: `https://placehold.co/600x400/png?text=${encodeURIComponent(imageText)}`,
