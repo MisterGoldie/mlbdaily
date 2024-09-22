@@ -135,12 +135,14 @@ app.frame('/games/:index', async (c) => {
       statusInfo = `Scheduled: ${gameTime} ET`
     }
 
-    const imageText = `${awayTeam} @ ${homeTeam}%0A${statusInfo}%0AGame ${index + 1} of ${games.length}`
+    // Always include the game number information
+    const gameNumberInfo = `Game ${index + 1} of ${games.length}`
+
+    const imageText = `${awayTeam} @ ${homeTeam}%0A${statusInfo}%0A${gameNumberInfo}`
 
     console.log('Image text:', imageText)
 
     return c.res({
-      // Increased image size, reduced font size, and used line breaks
       image: `https://placehold.co/1200x630/png?text=${imageText}&font-size=36`,
       intents: [
         <Button action={`/comparison/${index}`}>Team Comparison</Button>,
