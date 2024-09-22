@@ -10,12 +10,11 @@ export const app = new Frog({
 })
 
 const API_KEY = 'FBKXX1hlX9Uo4vJ1y7Lcv7A9ScCFJSTpZwpXZdbX'
-const BACKGROUND_IMAGE = 'https://bafybeibowmohuk5b6xmxyh6mikmk2zo7y56nz2yaowknf6lgaq5xkqqnpm.ipfs.w3s.link/Frame%2060%20(1).png'
 
 interface Game {
   id: string;
-  away: { name: string; id: string };
-  home: { name: string; id: string };
+  away: { name: string };
+  home: { name: string };
   scheduled: string;
 }
 
@@ -40,26 +39,7 @@ app.frame('/', async (c) => {
 
     if (!games || games.length === 0) {
       return c.res({
-        image: (
-          <div
-            style={{
-              backgroundImage: `url(${BACKGROUND_IMAGE})`,
-              backgroundSize: 'cover',
-              width: '100%',
-              height: '100%',
-              display: 'flex',
-              flexDirection: 'column',
-              justifyContent: 'center',
-              alignItems: 'center',
-              color: 'white',
-              fontSize: 32,
-              fontWeight: 'bold',
-              textAlign: 'center',
-            }}
-          >
-            No MLB Games Today
-          </div>
-        ),
+        image: 'https://placehold.co/600x400/png?text=No+MLB+Games+Today',
         intents: [
           <Button>Refresh</Button>
         ]
@@ -67,27 +47,7 @@ app.frame('/', async (c) => {
     }
 
     return c.res({
-      image: (
-        <div
-          style={{
-            backgroundImage: `url(${BACKGROUND_IMAGE})`,
-            backgroundSize: 'cover',
-            width: '100%',
-            height: '100%',
-            display: 'flex',
-            flexDirection: 'column',
-            justifyContent: 'center',
-            alignItems: 'center',
-            color: 'white',
-            fontSize: 32,
-            fontWeight: 'bold',
-            textAlign: 'center',
-          }}
-        >
-          <div>MLB Schedule</div>
-          <div>{games.length} Games Today</div>
-        </div>
-      ),
+      image: `https://placehold.co/600x400/png?text=${encodeURIComponent(`MLB Schedule\n${games.length} Games Today`)}`,
       intents: [
         <Button action="/games/0">View Games</Button>,
       ],
@@ -95,26 +55,7 @@ app.frame('/', async (c) => {
   } catch (error) {
     console.error('Error in root frame:', error)
     return c.res({
-      image: (
-        <div
-          style={{
-            backgroundImage: `url(${BACKGROUND_IMAGE})`,
-            backgroundSize: 'cover',
-            width: '100%',
-            height: '100%',
-            display: 'flex',
-            flexDirection: 'column',
-            justifyContent: 'center',
-            alignItems: 'center',
-            color: 'white',
-            fontSize: 32,
-            fontWeight: 'bold',
-            textAlign: 'center',
-          }}
-        >
-          Error Occurred
-        </div>
-      ),
+      image: 'https://placehold.co/600x400/png?text=Error+Occurred',
       intents: [
         <Button>Refresh</Button>
       ]
@@ -128,26 +69,7 @@ app.frame('/games/:index', async (c) => {
     const games = await fetchMLBSchedule()
     if (!games || games.length === 0) {
       return c.res({
-        image: (
-          <div
-            style={{
-              backgroundImage: `url(${BACKGROUND_IMAGE})`,
-              backgroundSize: 'cover',
-              width: '100%',
-              height: '100%',
-              display: 'flex',
-              flexDirection: 'column',
-              justifyContent: 'center',
-              alignItems: 'center',
-              color: 'white',
-              fontSize: 32,
-              fontWeight: 'bold',
-              textAlign: 'center',
-            }}
-          >
-            No MLB Games Today
-          </div>
-        ),
+        image: 'https://placehold.co/600x400/png?text=No+MLB+Games+Today',
         intents: [
           <Button action="/">Back to Start</Button>
         ]
@@ -165,28 +87,7 @@ app.frame('/games/:index', async (c) => {
     })
 
     return c.res({
-      image: (
-        <div
-          style={{
-            backgroundImage: `url(${BACKGROUND_IMAGE})`,
-            backgroundSize: 'cover',
-            width: '100%',
-            height: '100%',
-            display: 'flex',
-            flexDirection: 'column',
-            justifyContent: 'center',
-            alignItems: 'center',
-            color: 'white',
-            fontSize: 28,
-            fontWeight: 'bold',
-            textAlign: 'center',
-          }}
-        >
-          <div>{game.away.name} @ {game.home.name}</div>
-          <div>{gameTime} ET</div>
-          <div>Game {index + 1} of {games.length}</div>
-        </div>
-      ),
+      image: `https://placehold.co/600x400/png?text=${encodeURIComponent(`${game.away.name} @ ${game.home.name}\n${gameTime} ET\nGame ${index + 1} of ${games.length}`)}`,
       intents: [
         index > 0 && <Button action={`/games/${index - 1}`}>Previous</Button>,
         index < games.length - 1 && <Button action={`/games/${index + 1}`}>Next</Button>,
@@ -196,26 +97,7 @@ app.frame('/games/:index', async (c) => {
   } catch (error) {
     console.error('Error in game frame:', error)
     return c.res({
-      image: (
-        <div
-          style={{
-            backgroundImage: `url(${BACKGROUND_IMAGE})`,
-            backgroundSize: 'cover',
-            width: '100%',
-            height: '100%',
-            display: 'flex',
-            flexDirection: 'column',
-            justifyContent: 'center',
-            alignItems: 'center',
-            color: 'white',
-            fontSize: 32,
-            fontWeight: 'bold',
-            textAlign: 'center',
-          }}
-        >
-          Error Occurred
-        </div>
-      ),
+      image: 'https://placehold.co/600x400/png?text=Error+Occurred',
       intents: [
         <Button action="/">Back to Start</Button>
       ]
