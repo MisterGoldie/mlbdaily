@@ -13,9 +13,20 @@ const API_KEY = 'FBKXX1hlX9Uo4vJ1y7Lcv7A9ScCFJSTpZwpXZdbX'
 
 interface Game {
   id: string;
-  away: { name: string };
-  home: { name: string };
+  status: string;
   scheduled: string;
+  away: { name: string; wins?: number; losses?: number };
+  home: { name: string; wins?: number; losses?: number };
+  venue: { name: string };
+  broadcasts: { network: string }[];
+  pitching: { 
+    away: { probable: { last_name: string } },
+    home: { probable: { last_name: string } }
+  };
+  away_score?: number;
+  home_score?: number;
+  inning?: number;
+  inning_half?: string;
 }
 
 async function fetchMLBSchedule(): Promise<Game[] | null> {
@@ -86,8 +97,19 @@ app.frame('/games/:index', async (c) => {
       timeZone: 'America/New_York'
     })
 
+    let statusInfo = ''
+    if (game.status === 'scheduled') {
+      statusInfo = `${gameTime} ET\nProbable Pitchers:\n${game.pitching.away.probable.last_name || 'TBA'} vs ${game.pitching.home.probable.last_name || 'TBA'}`
+    } else if (game.status === 'inprogress') {
+      statusInfo = `In Progress\nInning: ${game.inning_half} ${game.inning}\nScore: ${game.away_score}-${game.home_score}`
+    } else if (game.status === 'closed') {
+      statusInfo = `Final\nScore: ${game.away_score}-${game.home_score}`
+    }
+
+    const imageText = `${game.away.name} (${game.away.wins}-${game.away.losses}) @\n${game.home.name} (${game.home.wins}-${game.home.losses})\n${statusInfo}\nVenue: ${game.venue.name}\nBroadcast: ${game.broadcasts[0]?.network || 'N/A'}\nGame ${index + 1} of ${games.length}`
+
     return c.res({
-      image: `https://placehold.co/600x400/png?text=${encodeURIComponent(`${game.away.name} @ ${game.home.name}\n${gameTime} ET\nGame ${index + 1} of ${games.length}`)}`,
+      image: `https://placehold.co/600x400/png?text=${encodeURIComponent(imageText)}`,
       intents: [
         index > 0 && <Button action={`/games/${index - 1}`}>Previous</Button>,
         index < games.length - 1 && <Button action={`/games/${index + 1}`}>Next</Button>,
