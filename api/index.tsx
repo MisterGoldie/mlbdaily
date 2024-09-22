@@ -36,7 +36,6 @@ async function fetchMLBSchedule(): Promise<Game[] | null> {
   try {
     const response = await fetch(apiUrl)
     const data = await response.json()
-    console.log('Schedule data:', JSON.stringify(data.games.slice(0, 2))) // Log first two games
     return data.games
   } catch (error) {
     console.error('Error fetching schedule:', error)
@@ -45,12 +44,11 @@ async function fetchMLBSchedule(): Promise<Game[] | null> {
 }
 
 async function fetchStandings(): Promise<{[key: string]: TeamStanding}> {
-  const apiUrl = `https://api.sportradar.com/mlb/trial/v7/en/seasons/2024/REG/standings.json?api_key=${API_KEY}`
+  const apiUrl = `https://api.sportradar.us/mlb/trial/v7/en/seasons/2024/REG/standings.json?api_key=${API_KEY}`
 
   try {
     const response = await fetch(apiUrl)
     const data = await response.json()
-    console.log('Standings data:', JSON.stringify(data)) // Log entire standings data
     const standings: {[key: string]: TeamStanding} = {}
     data.leagues.forEach((league: any) => {
       league.divisions.forEach((division: any) => {
@@ -63,10 +61,28 @@ async function fetchStandings(): Promise<{[key: string]: TeamStanding}> {
         })
       })
     })
-    console.log('Processed standings:', JSON.stringify(standings)) // Log processed standings
     return standings
   } catch (error) {
     console.error('Error fetching standings:', error)
+    return {}
+  }
+}
+
+async function fetchTeamLogos(): Promise<{[key: string]: string}> {
+  const apiUrl = `https://api.sportradar.com/mlb-images-t3/ap/logos/manifest.json?api_key=${API_KEY}`
+
+  try {
+    const response = await fetch(apiUrl)
+    const data = await response.json()
+    const logos: {[key: string]: string} = {}
+    data.assetlist.forEach((asset: any) => {
+      if (asset.type === 'primary') {
+        logos[asset.team_id] = `https://api.sportradar.com/mlb-images-t3/ap${asset.links[1].href}`
+      }
+    })
+    return logos
+  } catch (error) {
+    console.error('Error fetching team logos:', error)
     return {}
   }
 }
@@ -105,7 +121,7 @@ app.frame('/', async (c) => {
 app.frame('/games/:index', async (c) => {
   console.log('Game frame called with index:', c.req.param('index'))
   try {
-    const [games, standings] = await Promise.all([fetchMLBSchedule(), fetchStandings()])
+    const [games, standings, logos] = await Promise.all([fetchMLBSchedule(), fetchStandings(), fetchTeamLogos()])
     if (!games || games.length === 0) {
       return c.res({
         image: 'https://placehold.co/600x400/png?text=No+MLB+Games+Today',
@@ -127,8 +143,6 @@ app.frame('/games/:index', async (c) => {
       })
     }
 
-    console.log('Processing game:', JSON.stringify(game)) // Log the current game
-
     const gameTime = new Date(game.scheduled).toLocaleTimeString('en-US', {
       hour: 'numeric',
       minute: '2-digit',
@@ -139,9 +153,6 @@ app.frame('/games/:index', async (c) => {
     const awayStanding = standings[game.away.id]
     const homeStanding = standings[game.home.id]
 
-    console.log('Away standing:', JSON.stringify(awayStanding)) // Log away team standing
-    console.log('Home standing:', JSON.stringify(homeStanding)) // Log home team standing
-
     let statusInfo = game.status === 'scheduled' ? `${gameTime} ET` : 
                      game.status === 'inprogress' ? `In Progress\nInning: ${game.inning_half || ''} ${game.inning || ''}\nScore: ${game.away_score || 0}-${game.home_score || 0}` :
                      `Final: ${game.away_score || 0}-${game.home_score || 0}`
@@ -149,9 +160,10 @@ app.frame('/games/:index', async (c) => {
     const awayRecord = awayStanding ? `(${awayStanding.wins}-${awayStanding.losses})` : '(0-0)'
     const homeRecord = homeStanding ? `(${homeStanding.wins}-${homeStanding.losses})` : '(0-0)'
 
-    const imageText = `${game.away.name} ${awayRecord} @\n${game.home.name} ${homeRecord}\n${statusInfo}\nGame ${index + 1} of ${games.length}`
+    const awayLogo = logos[game.away.id] || ''
+    const homeLogo = logos[game.home.id] || ''
 
-    console.log('Final image text:', imageText) // Log the final image text
+    const imageText = `${game.away.name} ${awayRecord} @ ${game.home.name} ${homeRecord}\n${statusInfo}\nGame ${index + 1} of ${games.length}\nAway Logo: ${awayLogo}\nHome Logo: ${homeLogo}`
 
     return c.res({
       image: `https://placehold.co/600x400/png?text=${encodeURIComponent(imageText)}`,
