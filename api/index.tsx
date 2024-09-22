@@ -280,16 +280,18 @@ app.frame('/comparison/:index', async (c) => {
     }
 
     const formatRecord = (win: number, loss: number) => `${win}-${loss}`
-    const formatWinPercentage = (winP: number) => `${(winP * 100).toFixed(0)}%`
+    const formatWinPercentage = (winP: number) => `${(winP * 100).toFixed(1)}%`
 
     const comparisonText = `
 ${game.away.name} vs ${game.home.name}
 
+${game.away.name}:
+Record: ${formatRecord(awayStanding.win, awayStanding.loss)}
+Win %: ${formatWinPercentage(awayStanding.win_p)}
 
-Record:  ${formatRecord(awayStanding.win, awayStanding.loss)}  |  ${formatRecord(homeStanding.win, homeStanding.loss)}
-
-
-Win %:   ${formatWinPercentage(awayStanding.win_p)}  |  ${formatWinPercentage(homeStanding.win_p)}
+${game.home.name}:
+Record: ${formatRecord(homeStanding.win, homeStanding.loss)}
+Win %: ${formatWinPercentage(homeStanding.win_p)}
     `.trim()
 
     return c.res({
@@ -305,10 +307,10 @@ Win %:   ${formatWinPercentage(awayStanding.win_p)}  |  ${formatWinPercentage(ho
     console.error('Error in comparison frame:', error)
     return c.res({
       image: 'https://placehold.co/1000x1000/png?text=Error+Occurred',
-      imageAspectRatio: '1:1',
-      intents: [
-        <Button action="/">Back to Start</Button>
-      ]
+        imageAspectRatio: '1:1',
+        intents: [
+          <Button action="/">Back to Start</Button>
+        ]
     })
   }
 })
