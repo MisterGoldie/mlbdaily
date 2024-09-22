@@ -276,14 +276,16 @@ app.frame('/comparison/:index', async (c) => {
       })
     }
 
+    const formatValue = (value: number | string) => value.toString().padStart(5, ' ')
+
     const comparisonText = `${game.away.name} vs ${game.home.name}\n` +
-      `Record: ${awayStanding.win}-${awayStanding.loss} vs ${homeStanding.win}-${homeStanding.loss}\n` +
-      `Win %: ${awayStanding.win_p.toFixed(3)} vs ${homeStanding.win_p.toFixed(3)}\n` +
-      `Games Back: ${awayStanding.games_back} vs ${homeStanding.games_back}\n` +
-      `Streak: ${awayStanding.streak} vs ${homeStanding.streak}\n` +
-      `Last 10: ${awayStanding.last_10_won}-${awayStanding.last_10_lost} vs ${homeStanding.last_10_won}-${homeStanding.last_10_lost}\n` +
-      `League Rank: ${awayStanding.league_rank || 'N/A'} vs ${homeStanding.league_rank || 'N/A'}\n` +
-      `Division Rank: ${awayStanding.division_rank || 'N/A'} vs ${homeStanding.division_rank || 'N/A'}`
+      `Record:     ${formatValue(awayStanding.win)}-${formatValue(awayStanding.loss)} vs ${formatValue(homeStanding.win)}-${formatValue(homeStanding.loss)}\n` +
+      `Win %:      ${formatValue(awayStanding.win_p.toFixed(3))} vs ${formatValue(homeStanding.win_p.toFixed(3))}\n` +
+      `Games Back: ${formatValue(awayStanding.games_back)} vs ${formatValue(homeStanding.games_back)}\n` +
+      `Streak:     ${formatValue(awayStanding.streak)} vs ${formatValue(homeStanding.streak)}\n` +
+      `Last 10:    ${formatValue(awayStanding.last_10_won)}-${formatValue(awayStanding.last_10_lost)} vs ${formatValue(homeStanding.last_10_won)}-${formatValue(homeStanding.last_10_lost)}\n` +
+      `League Rank:   ${formatValue(awayStanding.league_rank || 'N/A')} vs ${formatValue(homeStanding.league_rank || 'N/A')}\n` +
+      `Division Rank: ${formatValue(awayStanding.division_rank || 'N/A')} vs ${formatValue(homeStanding.division_rank || 'N/A')}`
 
     return c.res({
       image: `https://placehold.co/600x400/png?text=${encodeURIComponent(comparisonText)}`,
