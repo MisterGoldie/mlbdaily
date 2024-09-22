@@ -89,7 +89,10 @@ async function fetchRankings(): Promise<any> {
   const apiUrl = `https://api.sportradar.com/mlb/trial/v7/en/seasons/2024/REG/rankings.json?api_key=${API_KEY}`
 
   try {
-    const response = await fetch(apiUrl)
+    const response = await fetch(apiUrl, {
+      method: 'GET',
+      headers: {accept: 'application/json'}
+    });
     const data = await response.json()
     console.log('Rankings data:', JSON.stringify(data, null, 2))
     rankingsCache = data
@@ -104,40 +107,28 @@ function findTeamStanding(standings: TeamStanding[], teamId: string): TeamStandi
   return standings.find(standing => standing.team.id === teamId)
 }
 
-function updateStandingsWithRankings(standings: TeamStanding[], rankings: any): TeamStanding[] {
-  if (!rankings || !rankings.league || !rankings.league.season || !rankings.league.season.leagues) {
-    console.error('Rankings data is not in the expected format')
-    return standings
-  }
+function findTeamRanking(rankings: any, teamId: string): { leagueRank: number | null, divisionRank: number | null } {
+  let leagueRank = null;
+  let divisionRank = null;
 
-  return standings.map(standing => {
-    let leagueRank, divisionRank
-
+  if (rankings && rankings.league && rankings.league.season && rankings.league.season.leagues) {
     for (const league of rankings.league.season.leagues) {
-      if (!league.teams) continue
-      const leagueTeam = league.teams.find((team: any) => team.id === standing.team.id)
+      const leagueTeam = league.teams.find((team: any) => team.id === teamId);
       if (leagueTeam) {
-        leagueRank = leagueTeam.rank
-        if (league.divisions) {
-          for (const division of league.divisions) {
-            if (!division.teams) continue
-            const divisionTeam = division.teams.find((team: any) => team.id === standing.team.id)
-            if (divisionTeam) {
-              divisionRank = divisionTeam.rank
-              break
-            }
+        leagueRank = leagueTeam.rank;
+        for (const division of league.divisions) {
+          const divisionTeam = division.teams.find((team: any) => team.id === teamId);
+          if (divisionTeam) {
+            divisionRank = divisionTeam.rank;
+            break;
           }
         }
-        break
+        break;
       }
     }
+  }
 
-    return {
-      ...standing,
-      league_rank: leagueRank,
-      division_rank: divisionRank
-    }
-  })
+  return { leagueRank, divisionRank };
 }
 
 app.frame('/', async (c) => {
@@ -264,9 +255,8 @@ app.frame('/comparison/:index', async (c) => {
       })
     }
 
-    const updatedStandings = updateStandingsWithRankings(standings, rankings)
-    const awayStanding = findTeamStanding(updatedStandings, game.away.id)
-    const homeStanding = findTeamStanding(updatedStandings, game.home.id)
+    const awayStanding = findTeamStanding(standings, game.away.id)
+    const homeStanding = findTeamStanding(standings, game.home.id)
 
     if (!awayStanding || !homeStanding) {
       return c.res({
@@ -320,11 +310,11 @@ Win %: ${formatWinPercentage(higherWinPercentageTeam.win_p)}
 app.frame('/comparison2/:index', async (c) => {
   console.log('Comparison2 frame called with index:', c.req.param('index'))
   try {
-    const [games, standings, rankings] = await Promise.all([fetchMLBSchedule(), fetchStandings(), fetchRankings()])
+    const [games, rankings] = await Promise.all([fetchMLBSchedule(), fetchRankings()])
     
-    if (!games || games.length === 0 || !standings || !rankings) {
+    if (!games || games.length === 0 || !rankings) {
       return c.res({
-        image: 'https://placehold.co/1000x1000/png?text=No+Data+Available',
+        image: 'https://placehold.co/1000x1000/png?text=No+Data+Available&font-size=24',
         imageAspectRatio: '1:1',
         intents: [
           <Button action="/">Back to Start</Button>
@@ -337,7 +327,7 @@ app.frame('/comparison2/:index', async (c) => {
 
     if (!game) {
       return c.res({
-        image: 'https://placehold.co/1000x1000/png?text=Game+Not+Found',
+        image: 'https://placehold.co/1000x1000/png?text=Game+Not+Found&font-size=24',
         imageAspectRatio: '1:1',
         intents: [
           <Button action="/">Back to Start</Button>
@@ -345,33 +335,27 @@ app.frame('/comparison2/:index', async (c) => {
       })
     }
 
-    const updatedStandings = updateStandingsWithRankings(standings, rankings)
-    const awayStanding = findTeamStanding(updatedStandings, game.away.id)
-    const homeStanding = findTeamStanding(updatedStandings, game.home.id)
+    const awayRanking = findTeamRanking(rankings, game.away.id)
+    const homeRanking = findTeamRanking(rankings, game.home.id)
 
-    if (!awayStanding || !homeStanding) {
-      return c.res({
-        image: 'https://placehold.co/1000x1000/png?text=Team+Data+Not+Available',
-        imageAspectRatio: '1:1',
-        intents: [
-          <Button action={`/games/${index}`}>Back to Game</Button>,
-          <Button action="/">Back to Start</Button>
-        ]
-      })
-    }
+    const formatRank = (rank: number | null) => rank !== null ? rank.toString() : 'N/A'
 
-    const formatRank = (rank: number | undefined) => rank?.toString() || 'N/A'
-
-    const comparisonText2 = `
+    const comparisonText = `
 ${game.away.name} vs ${game.home.name}
 
-League Rank: ${formatRank(awayStanding.league_rank)} | ${formatRank(homeStanding.league_rank)}
-Division Rank: ${formatRank(awayStanding.division_rank)} | ${formatRank(homeStanding.division_rank)}
-Games Back: ${awayStanding.games_back} | ${homeStanding.games_back}
+League Rank:
+${game.away.name}: ${formatRank(awayRanking.leagueRank)}
+${game.home.name}: ${formatRank(homeRanking.leagueRank)}
+
+Division Rank:
+${game.away.name}: ${formatRank(awayRanking.divisionRank)}
+${game.home.name}: ${formatRank(homeRanking.divisionRank)}
     `.trim()
 
+    const imageUrl = `https://placehold.co/1000x1000/png?text=${encodeURIComponent(comparisonText)}&font-size=24`
+
     return c.res({
-      image: `https://placehold.co/1000x1000/png?text=${encodeURIComponent(comparisonText2)}`,
+      image: imageUrl,
       imageAspectRatio: '1:1',
       intents: [
         <Button action={`/comparison/${index}`}>Previous Stats</Button>,
@@ -382,7 +366,7 @@ Games Back: ${awayStanding.games_back} | ${homeStanding.games_back}
   } catch (error) {
     console.error('Error in comparison2 frame:', error)
     return c.res({
-      image: 'https://placehold.co/1000x1000/png?text=Error+Occurred',
+      image: 'https://placehold.co/1000x1000/png?text=Error+Occurred&font-size=24',
       imageAspectRatio: '1:1',
       intents: [
         <Button action="/">Back to Start</Button>
