@@ -51,6 +51,7 @@ async function fetchMLBSchedule(): Promise<Game[] | null> {
   try {
     const response = await fetch(apiUrl)
     const data = await response.json()
+    console.log('Schedule data:', JSON.stringify(data, null, 2))
     return data.games
   } catch (error) {
     console.error('Error fetching schedule:', error)
@@ -66,6 +67,7 @@ async function fetchStandings(): Promise<TeamStanding[] | null> {
   try {
     const response = await fetch(apiUrl)
     const data = await response.json()
+    console.log('Standings data:', JSON.stringify(data, null, 2))
     standingsCache = data.league.season.leagues
       .flatMap((league: League) => league.divisions)
       .flatMap((division: Division) => division.teams)
@@ -77,8 +79,15 @@ async function fetchStandings(): Promise<TeamStanding[] | null> {
 }
 
 function findTeamStanding(standings: TeamStanding[], teamId: string | undefined): TeamStanding | undefined {
-  if (!teamId) return undefined;
-  return standings.find(standing => standing.team.id === teamId)
+  if (!teamId) {
+    console.log('Team ID is undefined')
+    return undefined;
+  }
+  const standing = standings.find(standing => standing.team.id === teamId)
+  if (!standing) {
+    console.log(`No standing found for team ID: ${teamId}`)
+  }
+  return standing
 }
 
 app.frame('/', async (c) => {
@@ -147,6 +156,8 @@ app.frame('/games/:index', async (c) => {
       })
     }
 
+    console.log('Current game:', JSON.stringify(game, null, 2))
+
     const gameTime = new Date(game.scheduled).toLocaleTimeString('en-US', {
       hour: 'numeric',
       minute: '2-digit',
@@ -158,8 +169,11 @@ app.frame('/games/:index', async (c) => {
                      game.status === 'inprogress' ? `In Progress\nInning: ${game.inning_half || ''} ${game.inning || ''}\nScore: ${game.away_score || 0}-${game.home_score || 0}` :
                      `Final: ${game.away_score || 0}-${game.home_score || 0}`
 
-    const awayStanding = findTeamStanding(standings, game.away?.id)
-    const homeStanding = findTeamStanding(standings, game.home?.id)
+    const awayStanding = game.away ? findTeamStanding(standings, game.away.id) : undefined
+    const homeStanding = game.home ? findTeamStanding(standings, game.home.id) : undefined
+
+    console.log('Away standing:', awayStanding)
+    console.log('Home standing:', homeStanding)
 
     const awayInfo = awayStanding ? `${awayStanding.win}-${awayStanding.loss} (${awayStanding.rank.division} in div)` : 'N/A'
     const homeInfo = homeStanding ? `${homeStanding.win}-${homeStanding.loss} (${homeStanding.rank.division} in div)` : 'N/A'
