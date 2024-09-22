@@ -290,7 +290,6 @@ Record : ${formatRecord(awayStanding.win, awayStanding.loss).padStart(14)} ${for
 Win % : ${formatWinPercentage(awayStanding.win_p).padStart(14)} ${formatWinPercentage(homeStanding.win_p).padStart(15)}
 Streak : ${awayStanding.streak.padStart(14)} ${homeStanding.streak.padStart(15)}
 Last 10: ${`${awayStanding.last_10_won}-${awayStanding.last_10_lost}`.padStart(14)} ${`${homeStanding.last_10_won}-${homeStanding.last_10_lost}`.padStart(15)}
-Streak : ${awayStanding.streak.padStart(14)} ${homeStanding.streak.padStart(15)}
 LgRank : ${formatRank(awayStanding.league_rank).padStart(14)} ${formatRank(homeStanding.league_rank).padStart(15)}
 DivRank: ${formatRank(awayStanding.division_rank).padStart(14)} ${formatRank(homeStanding.division_rank).padStart(15)}
 GB : ${awayStanding.games_back.toString().padStart(14)} ${homeStanding.games_back.toString().padStart(15)}
