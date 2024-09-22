@@ -13,9 +13,40 @@ const API_KEY = 'FBKXX1hlX9Uo4vJ1y7Lcv7A9ScCFJSTpZwpXZdbX'
 
 interface Game {
   id: string;
-  away: { name: string };
-  home: { name: string };
+  away: { name: string; id: string };
+  home: { name: string; id: string };
   scheduled: string;
+}
+
+interface TeamProfile {
+  id: string;
+  name: string;
+  logo_url?: string; // Assuming the API provides this
+}
+
+const teamProfileCache: { [key: string]: TeamProfile } = {}
+
+async function fetchTeamProfile(teamId: string): Promise<TeamProfile> {
+  if (teamProfileCache[teamId]) {
+    return teamProfileCache[teamId]
+  }
+
+  const apiUrl = `https://api.sportradar.com/mlb/trial/v7/en/teams/${teamId}/profile.json?api_key=${API_KEY}`
+  
+  try {
+    const response = await fetch(apiUrl)
+    const data = await response.json()
+    const profile: TeamProfile = {
+      id: data.id,
+      name: data.name,
+      logo_url: data.logo_url // Adjust this based on actual API response
+    }
+    teamProfileCache[teamId] = profile
+    return profile
+  } catch (error) {
+    console.error('Error fetching team profile:', error)
+    return { id: teamId, name: 'Unknown Team' }
+  }
 }
 
 async function fetchMLBSchedule(): Promise<Game[] | null> {
@@ -79,6 +110,11 @@ app.frame('/games/:index', async (c) => {
     const index = parseInt(c.req.param('index'))
     const game = games[index]
 
+    const [awayTeam, homeTeam] = await Promise.all([
+      fetchTeamProfile(game.away.id),
+      fetchTeamProfile(game.home.id)
+    ])
+
     const gameTime = new Date(game.scheduled).toLocaleTimeString('en-US', {
       hour: 'numeric',
       minute: '2-digit',
@@ -86,8 +122,9 @@ app.frame('/games/:index', async (c) => {
       timeZone: 'America/New_York'
     })
 
+    // Note: You'd need to implement an actual image generation service
     return c.res({
-      image: `https://placehold.co/600x400/png?text=${encodeURIComponent(`${game.away.name} @ ${game.home.name}\n${gameTime} ET\nGame ${index + 1} of ${games.length}`)}`,
+      image: `https://api.yourservice.com/generate-image?awayTeam=${awayTeam.name}&homeTeam=${homeTeam.name}&awayLogo=${awayTeam.logo_url || ''}&homeLogo=${homeTeam.logo_url || ''}&gameTime=${gameTime}&gameNumber=${index + 1}&totalGames=${games.length}`,
       intents: [
         index > 0 && <Button action={`/games/${index - 1}`}>Previous</Button>,
         index < games.length - 1 && <Button action={`/games/${index + 1}`}>Next</Button>,
