@@ -47,7 +47,7 @@ app.frame('/', async (c) => {
     }
 
     return c.res({
-      image: 'https://placehold.co/600x400/png?text=MLB+Schedule',
+      image: `https://placehold.co/600x400/png?text=${encodeURIComponent(`MLB Schedule\n${games.length} Games Today`)}`,
       intents: [
         <Button action="/games/0">View Games</Button>,
       ],
@@ -79,16 +79,15 @@ app.frame('/games/:index', async (c) => {
     const index = parseInt(c.req.param('index'))
     const game = games[index]
 
-    // Format the game time
     const gameTime = new Date(game.scheduled).toLocaleTimeString('en-US', {
       hour: 'numeric',
       minute: '2-digit',
       hour12: true,
-      timeZone: 'America/New_York'  // Assuming Eastern Time, adjust if needed
+      timeZone: 'America/New_York'
     })
 
     return c.res({
-      image: `https://placehold.co/600x400/png?text=${encodeURIComponent(`${game.away.name} @ ${game.home.name}\n${gameTime} ET`)}`,
+      image: `https://placehold.co/600x400/png?text=${encodeURIComponent(`${game.away.name} @ ${game.home.name}\n${gameTime} ET\nGame ${index + 1} of ${games.length}`)}`,
       intents: [
         index > 0 && <Button action={`/games/${index - 1}`}>Previous</Button>,
         index < games.length - 1 && <Button action={`/games/${index + 1}`}>Next</Button>,
