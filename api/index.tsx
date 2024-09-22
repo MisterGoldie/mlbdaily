@@ -94,7 +94,7 @@ app.frame('/games/:index', async (c) => {
     
     if (!games || games.length === 0) {
       return c.res({
-        image: 'https://placehold.co/1200x630/png?text=No+Data+Available&font-size=32',
+        image: 'https://placehold.co/1200x630/png?text=No+Data+Available&font-size=40',
         intents: [
           <Button action="/">Back to Start</Button>
         ]
@@ -106,7 +106,7 @@ app.frame('/games/:index', async (c) => {
 
     if (!game) {
       return c.res({
-        image: 'https://placehold.co/1200x630/png?text=Game+Not+Found&font-size=32',
+        image: 'https://placehold.co/1200x630/png?text=Game+Not+Found&font-size=40',
         intents: [
           <Button action="/">Back to Start</Button>
         ]
@@ -137,14 +137,13 @@ app.frame('/games/:index', async (c) => {
 
     const gameNumberInfo = `Game ${index + 1} of ${games.length}`
 
-    // Use '|' as a delimiter for line breaks
-    const imageText = `${awayTeam}|@|${homeTeam}|${statusInfo}|${gameNumberInfo}`
+    // Format the text with explicit line breaks
+    const imageText = `${awayTeam}%0Avs%0A${homeTeam}%0A%0A${statusInfo}%0A%0A${gameNumberInfo}`
 
     console.log('Image text:', imageText)
 
     return c.res({
-      // Increase image size, reduce font size, use word-wrap and line-height
-      image: `https://placehold.co/1200x630/png?text=${encodeURIComponent(imageText)}&font-size=30&word-wrap=true&line-height=1.5`,
+      image: `https://placehold.co/1200x630/png?text=${imageText}&font-size=40`,
       intents: [
         <Button action={`/comparison/${index}`}>Team Comparison</Button>,
         index > 0 && <Button action={`/games/${index - 1}`}>Previous</Button>,
@@ -155,7 +154,7 @@ app.frame('/games/:index', async (c) => {
   } catch (error) {
     console.error('Error in game frame:', error)
     return c.res({
-      image: 'https://placehold.co/1200x630/png?text=Error+Occurred&font-size=32',
+      image: 'https://placehold.co/1200x630/png?text=Error+Occurred&font-size=40',
       intents: [
         <Button action="/">Back to Start</Button>
       ]
