@@ -243,7 +243,7 @@ app.frame('/comparison/:index', async (c) => {
     
     if (!games || games.length === 0 || !standings || !rankings) {
       return c.res({
-        image: 'https://placehold.co/1000x1000/png?text=No+Data+Available&size=30',
+        image: 'https://placehold.co/1000x1000/png?text=No+Data+Available',
         imageAspectRatio: '1:1',
         intents: [
           <Button action="/">Back to Start</Button>
@@ -256,7 +256,7 @@ app.frame('/comparison/:index', async (c) => {
 
     if (!game) {
       return c.res({
-        image: 'https://placehold.co/1000x1000/png?text=Game+Not+Found&size=30',
+        image: 'https://placehold.co/1000x1000/png?text=Game+Not+Found',
         imageAspectRatio: '1:1',
         intents: [
           <Button action="/">Back to Start</Button>
@@ -270,7 +270,7 @@ app.frame('/comparison/:index', async (c) => {
 
     if (!awayStanding || !homeStanding) {
       return c.res({
-        image: 'https://placehold.co/1000x1000/png?text=Team+Data+Not+Available&size=30',
+        image: 'https://placehold.co/1000x1000/png?text=Team+Data+Not+Available',
         imageAspectRatio: '1:1',
         intents: [
           <Button action={`/games/${index}`}>Back to Game</Button>,
@@ -283,20 +283,77 @@ app.frame('/comparison/:index', async (c) => {
     const formatWinPercentage = (winP: number) => `${(winP * 100).toFixed(1)}%`
     const formatRank = (rank: number | undefined) => rank?.toString() || 'N/A'
 
-    const comparisonText = `
-${game.away.name.padEnd(20)}${game.home.name}
-
-Record : ${formatRecord(awayStanding.win, awayStanding.loss).padStart(14)} ${formatRecord(homeStanding.win, homeStanding.loss).padStart(15)}
-Win % : ${formatWinPercentage(awayStanding.win_p).padStart(14)} ${formatWinPercentage(homeStanding.win_p).padStart(15)}
-Streak : ${awayStanding.streak.padStart(14)} ${homeStanding.streak.padStart(15)}
-Last 10: ${`${awayStanding.last_10_won}-${awayStanding.last_10_lost}`.padStart(14)} ${`${homeStanding.last_10_won}-${homeStanding.last_10_lost}`.padStart(15)}
-LgRank : ${formatRank(awayStanding.league_rank).padStart(14)} ${formatRank(homeStanding.league_rank).padStart(15)}
-DivRank: ${formatRank(awayStanding.division_rank).padStart(14)} ${formatRank(homeStanding.division_rank).padStart(15)}
-GB : ${awayStanding.games_back.toString().padStart(14)} ${homeStanding.games_back.toString().padStart(15)}
-`
+    const htmlContent = `
+      <html>
+        <head>
+          <style>
+            body {
+              font-family: Arial, sans-serif;
+              font-size: 14px;
+              line-height: 1.2;
+              color: #333;
+              margin: 0;
+              padding: 10px;
+            }
+            table {
+              width: 100%;
+              border-collapse: collapse;
+            }
+            th {
+              text-align: left;
+              padding: 5px;
+              border-bottom: 1px solid #ddd;
+            }
+            td {
+              padding: 5px;
+            }
+            .team-name {
+              font-weight: bold;
+              font-size: 16px;
+            }
+          </style>
+        </head>
+        <body>
+          <table>
+            <tr>
+              <th class="team-name">${game.away.name}</th>
+              <th class="team-name">${game.home.name}</th>
+            </tr>
+            <tr>
+              <td>Record: ${formatRecord(awayStanding.win, awayStanding.loss)}</td>
+              <td>Record: ${formatRecord(homeStanding.win, homeStanding.loss)}</td>
+            </tr>
+            <tr>
+              <td>Win %: ${formatWinPercentage(awayStanding.win_p)}</td>
+              <td>Win %: ${formatWinPercentage(homeStanding.win_p)}</td>
+            </tr>
+            <tr>
+              <td>Streak: ${awayStanding.streak}</td>
+              <td>Streak: ${homeStanding.streak}</td>
+            </tr>
+            <tr>
+              <td>Last 10: ${awayStanding.last_10_won}-${awayStanding.last_10_lost}</td>
+              <td>Last 10: ${homeStanding.last_10_won}-${homeStanding.last_10_lost}</td>
+            </tr>
+            <tr>
+              <td>LgRank: ${formatRank(awayStanding.league_rank)}</td>
+              <td>LgRank: ${formatRank(homeStanding.league_rank)}</td>
+            </tr>
+            <tr>
+              <td>DivRank: ${formatRank(awayStanding.division_rank)}</td>
+              <td>DivRank: ${formatRank(homeStanding.division_rank)}</td>
+            </tr>
+            <tr>
+              <td>GB: ${awayStanding.games_back}</td>
+              <td>GB: ${homeStanding.games_back}</td>
+            </tr>
+          </table>
+        </body>
+      </html>
+    `
 
     return c.res({
-      image: `https://placehold.co/1000x1000/png?text=${encodeURIComponent(comparisonText)}&size=20`,
+      image: `data:text/html;charset=utf-8,${encodeURIComponent(htmlContent)}`,
       imageAspectRatio: '1:1',
       intents: [
         <Button action={`/games/${index}`}>Back to Game</Button>,
@@ -306,7 +363,7 @@ GB : ${awayStanding.games_back.toString().padStart(14)} ${homeStanding.games_bac
   } catch (error) {
     console.error('Error in comparison frame:', error)
     return c.res({
-      image: 'https://placehold.co/1000x1000/png?text=Error+Occurred&size=30',
+      image: 'https://placehold.co/1000x1000/png?text=Error+Occurred',
       imageAspectRatio: '1:1',
       intents: [
         <Button action="/">Back to Start</Button>
