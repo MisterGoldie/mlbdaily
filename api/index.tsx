@@ -36,6 +36,7 @@ async function fetchMLBSchedule(): Promise<Game[] | null> {
   try {
     const response = await fetch(apiUrl)
     const data = await response.json()
+    console.log('Schedule data:', JSON.stringify(data.games.slice(0, 2))) // Log first two games
     return data.games
   } catch (error) {
     console.error('Error fetching schedule:', error)
@@ -49,6 +50,7 @@ async function fetchStandings(): Promise<{[key: string]: TeamStanding}> {
   try {
     const response = await fetch(apiUrl)
     const data = await response.json()
+    console.log('Standings data:', JSON.stringify(data)) // Log entire standings data
     const standings: {[key: string]: TeamStanding} = {}
     data.leagues.forEach((league: any) => {
       league.divisions.forEach((division: any) => {
@@ -61,6 +63,7 @@ async function fetchStandings(): Promise<{[key: string]: TeamStanding}> {
         })
       })
     })
+    console.log('Processed standings:', JSON.stringify(standings)) // Log processed standings
     return standings
   } catch (error) {
     console.error('Error fetching standings:', error)
@@ -124,6 +127,8 @@ app.frame('/games/:index', async (c) => {
       })
     }
 
+    console.log('Processing game:', JSON.stringify(game)) // Log the current game
+
     const gameTime = new Date(game.scheduled).toLocaleTimeString('en-US', {
       hour: 'numeric',
       minute: '2-digit',
@@ -134,14 +139,19 @@ app.frame('/games/:index', async (c) => {
     const awayStanding = standings[game.away.id]
     const homeStanding = standings[game.home.id]
 
+    console.log('Away standing:', JSON.stringify(awayStanding)) // Log away team standing
+    console.log('Home standing:', JSON.stringify(homeStanding)) // Log home team standing
+
     let statusInfo = game.status === 'scheduled' ? `${gameTime} ET` : 
                      game.status === 'inprogress' ? `In Progress\nInning: ${game.inning_half || ''} ${game.inning || ''}\nScore: ${game.away_score || 0}-${game.home_score || 0}` :
                      `Final: ${game.away_score || 0}-${game.home_score || 0}`
 
-    const awayRecord = awayStanding ? `(${awayStanding.wins}-${awayStanding.losses})` : ''
-    const homeRecord = homeStanding ? `(${homeStanding.wins}-${homeStanding.losses})` : ''
+    const awayRecord = awayStanding ? `(${awayStanding.wins}-${awayStanding.losses})` : '(0-0)'
+    const homeRecord = homeStanding ? `(${homeStanding.wins}-${homeStanding.losses})` : '(0-0)'
 
     const imageText = `${game.away.name} ${awayRecord} @\n${game.home.name} ${homeRecord}\n${statusInfo}\nGame ${index + 1} of ${games.length}`
+
+    console.log('Final image text:', imageText) // Log the final image text
 
     return c.res({
       image: `https://placehold.co/600x400/png?text=${encodeURIComponent(imageText)}`,
