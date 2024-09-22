@@ -15,8 +15,8 @@ interface Game {
   id: string;
   status: string;
   scheduled: string;
-  away: { name: string; id: string };
-  home: { name: string; id: string };
+  away?: { name: string; id: string };
+  home?: { name: string; id: string };
   away_score?: number;
   home_score?: number;
   inning?: number;
@@ -76,7 +76,8 @@ async function fetchStandings(): Promise<TeamStanding[] | null> {
   }
 }
 
-function findTeamStanding(standings: TeamStanding[], teamId: string): TeamStanding | undefined {
+function findTeamStanding(standings: TeamStanding[], teamId: string | undefined): TeamStanding | undefined {
+  if (!teamId) return undefined;
   return standings.find(standing => standing.team.id === teamId)
 }
 
@@ -157,13 +158,13 @@ app.frame('/games/:index', async (c) => {
                      game.status === 'inprogress' ? `In Progress\nInning: ${game.inning_half || ''} ${game.inning || ''}\nScore: ${game.away_score || 0}-${game.home_score || 0}` :
                      `Final: ${game.away_score || 0}-${game.home_score || 0}`
 
-    const awayStanding = findTeamStanding(standings, game.away.id)
-    const homeStanding = findTeamStanding(standings, game.home.id)
+    const awayStanding = findTeamStanding(standings, game.away?.id)
+    const homeStanding = findTeamStanding(standings, game.home?.id)
 
     const awayInfo = awayStanding ? `${awayStanding.win}-${awayStanding.loss} (${awayStanding.rank.division} in div)` : 'N/A'
     const homeInfo = homeStanding ? `${homeStanding.win}-${homeStanding.loss} (${homeStanding.rank.division} in div)` : 'N/A'
 
-    const imageText = `${game.away.name} @ ${game.home.name}\n${statusInfo}\n${game.away.name}: ${awayInfo}\n${game.home.name}: ${homeInfo}\nGame ${index + 1} of ${games.length}`
+    const imageText = `${game.away?.name || 'Away Team'} @ ${game.home?.name || 'Home Team'}\n${statusInfo}\n${game.away?.name || 'Away Team'}: ${awayInfo}\n${game.home?.name || 'Home Team'}: ${homeInfo}\nGame ${index + 1} of ${games.length}`
 
     return c.res({
       image: `https://placehold.co/600x400/png?text=${encodeURIComponent(imageText)}`,
