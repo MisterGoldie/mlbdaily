@@ -27,6 +27,11 @@ interface TeamStanding {
   team: { id: string; name: string };
   win: number;
   loss: number;
+  win_p: number;
+  games_back: number;
+  streak: string;
+  last_10_won: number;
+  last_10_lost: number;
 }
 
 let standingsCache: TeamStanding[] | null = null;
@@ -61,7 +66,12 @@ async function fetchStandings(): Promise<TeamStanding[] | null> {
       .map((team: any) => ({
         team: { id: team.id, name: team.name },
         win: team.win,
-        loss: team.loss
+        loss: team.loss,
+        win_p: team.win_p,
+        games_back: team.games_back,
+        streak: team.streak,
+        last_10_won: team.last_10_won,
+        last_10_lost: team.last_10_lost
       }))
     return standingsCache
   } catch (error) {
@@ -110,18 +120,9 @@ app.frame('/games/:index', async (c) => {
   try {
     const [games, standings] = await Promise.all([fetchMLBSchedule(), fetchStandings()])
     
-    if (!games || games.length === 0) {
+    if (!games || games.length === 0 || !standings) {
       return c.res({
-        image: 'https://placehold.co/600x400/png?text=No+MLB+Games+Today',
-        intents: [
-          <Button action="/">Back to Start</Button>
-        ]
-      })
-    }
-
-    if (!standings) {
-      return c.res({
-        image: 'https://placehold.co/600x400/png?text=Error+Fetching+Standings',
+        image: 'https://placehold.co/600x400/png?text=No+Data+Available',
         intents: [
           <Button action="/">Back to Start</Button>
         ]
@@ -140,8 +141,6 @@ app.frame('/games/:index', async (c) => {
       })
     }
 
-    console.log('Current game:', JSON.stringify(game, null, 2))
-
     const gameTime = new Date(game.scheduled).toLocaleTimeString('en-US', {
       hour: 'numeric',
       minute: '2-digit',
@@ -156,9 +155,6 @@ app.frame('/games/:index', async (c) => {
     const awayStanding = findTeamStanding(standings, game.away.id)
     const homeStanding = findTeamStanding(standings, game.home.id)
 
-    console.log('Away standing:', awayStanding)
-    console.log('Home standing:', homeStanding)
-
     const awayRecord = awayStanding ? `${awayStanding.win}-${awayStanding.loss}` : 'N/A'
     const homeRecord = homeStanding ? `${homeStanding.win}-${homeStanding.loss}` : 'N/A'
 
@@ -167,6 +163,7 @@ app.frame('/games/:index', async (c) => {
     return c.res({
       image: `https://placehold.co/600x400/png?text=${encodeURIComponent(imageText)}`,
       intents: [
+        <Button action={`/comparison/${index}`}>Team Comparison</Button>,
         index > 0 && <Button action={`/games/${index - 1}`}>Previous</Button>,
         index < games.length - 1 && <Button action={`/games/${index + 1}`}>Next</Button>,
         <Button action="/">Back to Start</Button>,
@@ -174,6 +171,70 @@ app.frame('/games/:index', async (c) => {
     })
   } catch (error) {
     console.error('Error in game frame:', error)
+    return c.res({
+      image: 'https://placehold.co/600x400/png?text=Error+Occurred',
+      intents: [
+        <Button action="/">Back to Start</Button>
+      ]
+    })
+  }
+})
+
+app.frame('/comparison/:index', async (c) => {
+  console.log('Comparison frame called with index:', c.req.param('index'))
+  try {
+    const [games, standings] = await Promise.all([fetchMLBSchedule(), fetchStandings()])
+    
+    if (!games || games.length === 0 || !standings) {
+      return c.res({
+        image: 'https://placehold.co/600x400/png?text=No+Data+Available',
+        intents: [
+          <Button action="/">Back to Start</Button>
+        ]
+      })
+    }
+
+    const index = parseInt(c.req.param('index'))
+    const game = games[index]
+
+    if (!game) {
+      return c.res({
+        image: 'https://placehold.co/600x400/png?text=Game+Not+Found',
+        intents: [
+          <Button action="/">Back to Start</Button>
+        ]
+      })
+    }
+
+    const awayStanding = findTeamStanding(standings, game.away.id)
+    const homeStanding = findTeamStanding(standings, game.home.id)
+
+    if (!awayStanding || !homeStanding) {
+      return c.res({
+        image: 'https://placehold.co/600x400/png?text=Team+Data+Not+Available',
+        intents: [
+          <Button action={`/games/${index}`}>Back to Game</Button>,
+          <Button action="/">Back to Start</Button>
+        ]
+      })
+    }
+
+    const comparisonText = `${game.away.name} vs ${game.home.name}\n` +
+      `Record: ${awayStanding.win}-${awayStanding.loss} vs ${homeStanding.win}-${homeStanding.loss}\n` +
+      `Win %: ${awayStanding.win_p.toFixed(3)} vs ${homeStanding.win_p.toFixed(3)}\n` +
+      `Games Back: ${awayStanding.games_back} vs ${homeStanding.games_back}\n` +
+      `Streak: ${awayStanding.streak} vs ${homeStanding.streak}\n` +
+      `Last 10: ${awayStanding.last_10_won}-${awayStanding.last_10_lost} vs ${homeStanding.last_10_won}-${homeStanding.last_10_lost}`
+
+    return c.res({
+      image: `https://placehold.co/600x400/png?text=${encodeURIComponent(comparisonText)}`,
+      intents: [
+        <Button action={`/games/${index}`}>Back to Game</Button>,
+        <Button action="/">Back to Start</Button>
+      ],
+    })
+  } catch (error) {
+    console.error('Error in comparison frame:', error)
     return c.res({
       image: 'https://placehold.co/600x400/png?text=Error+Occurred',
       intents: [
