@@ -15,8 +15,8 @@ interface Game {
   id: string;
   status: string;
   scheduled: string;
-  away?: { name: string; id: string };
-  home?: { name: string; id: string };
+  away: { name: string; id: string };
+  home: { name: string; id: string };
   away_score?: number;
   home_score?: number;
   inning?: number;
@@ -25,21 +25,8 @@ interface Game {
 
 interface TeamStanding {
   team: { id: string; name: string };
-  rank: {
-    division: number;
-    league: number;
-  };
   win: number;
   loss: number;
-  games_back: number;
-}
-
-interface League {
-  divisions: Division[];
-}
-
-interface Division {
-  teams: TeamStanding[];
 }
 
 let standingsCache: TeamStanding[] | null = null;
@@ -69,8 +56,13 @@ async function fetchStandings(): Promise<TeamStanding[] | null> {
     const data = await response.json()
     console.log('Standings data:', JSON.stringify(data, null, 2))
     standingsCache = data.league.season.leagues
-      .flatMap((league: League) => league.divisions)
-      .flatMap((division: Division) => division.teams)
+      .flatMap((league: any) => league.divisions)
+      .flatMap((division: any) => division.teams)
+      .map((team: any) => ({
+        team: { id: team.id, name: team.name },
+        win: team.win,
+        loss: team.loss
+      }))
     return standingsCache
   } catch (error) {
     console.error('Error fetching standings:', error)
@@ -78,16 +70,8 @@ async function fetchStandings(): Promise<TeamStanding[] | null> {
   }
 }
 
-function findTeamStanding(standings: TeamStanding[], teamId: string | undefined): TeamStanding | undefined {
-  if (!teamId) {
-    console.log('Team ID is undefined')
-    return undefined;
-  }
-  const standing = standings.find(standing => standing.team.id === teamId)
-  if (!standing) {
-    console.log(`No standing found for team ID: ${teamId}`)
-  }
-  return standing
+function findTeamStanding(standings: TeamStanding[], teamId: string): TeamStanding | undefined {
+  return standings.find(standing => standing.team.id === teamId)
 }
 
 app.frame('/', async (c) => {
@@ -169,16 +153,16 @@ app.frame('/games/:index', async (c) => {
                      game.status === 'inprogress' ? `In Progress\nInning: ${game.inning_half || ''} ${game.inning || ''}\nScore: ${game.away_score || 0}-${game.home_score || 0}` :
                      `Final: ${game.away_score || 0}-${game.home_score || 0}`
 
-    const awayStanding = game.away ? findTeamStanding(standings, game.away.id) : undefined
-    const homeStanding = game.home ? findTeamStanding(standings, game.home.id) : undefined
+    const awayStanding = findTeamStanding(standings, game.away.id)
+    const homeStanding = findTeamStanding(standings, game.home.id)
 
     console.log('Away standing:', awayStanding)
     console.log('Home standing:', homeStanding)
 
-    const awayInfo = awayStanding ? `${awayStanding.win}-${awayStanding.loss} (${awayStanding.rank.division} in div)` : 'N/A'
-    const homeInfo = homeStanding ? `${homeStanding.win}-${homeStanding.loss} (${homeStanding.rank.division} in div)` : 'N/A'
+    const awayRecord = awayStanding ? `${awayStanding.win}-${awayStanding.loss}` : 'N/A'
+    const homeRecord = homeStanding ? `${homeStanding.win}-${homeStanding.loss}` : 'N/A'
 
-    const imageText = `${game.away?.name || 'Away Team'} @ ${game.home?.name || 'Home Team'}\n${statusInfo}\n${game.away?.name || 'Away Team'}: ${awayInfo}\n${game.home?.name || 'Home Team'}: ${homeInfo}\nGame ${index + 1} of ${games.length}`
+    const imageText = `${game.away.name} (${awayRecord}) @ ${game.home.name} (${homeRecord})\n${statusInfo}\nGame ${index + 1} of ${games.length}`
 
     return c.res({
       image: `https://placehold.co/600x400/png?text=${encodeURIComponent(imageText)}`,
