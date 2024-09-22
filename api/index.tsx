@@ -283,77 +283,20 @@ app.frame('/comparison/:index', async (c) => {
     const formatWinPercentage = (winP: number) => `${(winP * 100).toFixed(1)}%`
     const formatRank = (rank: number | undefined) => rank?.toString() || 'N/A'
 
-    const htmlContent = `
-      <html>
-        <head>
-          <style>
-            body {
-              font-family: Arial, sans-serif;
-              font-size: 14px;
-              line-height: 1.2;
-              color: #333;
-              margin: 0;
-              padding: 10px;
-            }
-            table {
-              width: 100%;
-              border-collapse: collapse;
-            }
-            th {
-              text-align: left;
-              padding: 5px;
-              border-bottom: 1px solid #ddd;
-            }
-            td {
-              padding: 5px;
-            }
-            .team-name {
-              font-weight: bold;
-              font-size: 16px;
-            }
-          </style>
-        </head>
-        <body>
-          <table>
-            <tr>
-              <th class="team-name">${game.away.name}</th>
-              <th class="team-name">${game.home.name}</th>
-            </tr>
-            <tr>
-              <td>Record: ${formatRecord(awayStanding.win, awayStanding.loss)}</td>
-              <td>Record: ${formatRecord(homeStanding.win, homeStanding.loss)}</td>
-            </tr>
-            <tr>
-              <td>Win %: ${formatWinPercentage(awayStanding.win_p)}</td>
-              <td>Win %: ${formatWinPercentage(homeStanding.win_p)}</td>
-            </tr>
-            <tr>
-              <td>Streak: ${awayStanding.streak}</td>
-              <td>Streak: ${homeStanding.streak}</td>
-            </tr>
-            <tr>
-              <td>Last 10: ${awayStanding.last_10_won}-${awayStanding.last_10_lost}</td>
-              <td>Last 10: ${homeStanding.last_10_won}-${homeStanding.last_10_lost}</td>
-            </tr>
-            <tr>
-              <td>LgRank: ${formatRank(awayStanding.league_rank)}</td>
-              <td>LgRank: ${formatRank(homeStanding.league_rank)}</td>
-            </tr>
-            <tr>
-              <td>DivRank: ${formatRank(awayStanding.division_rank)}</td>
-              <td>DivRank: ${formatRank(homeStanding.division_rank)}</td>
-            </tr>
-            <tr>
-              <td>GB: ${awayStanding.games_back}</td>
-              <td>GB: ${homeStanding.games_back}</td>
-            </tr>
-          </table>
-        </body>
-      </html>
-    `
+    const comparisonText = `
+${game.away.name} vs ${game.home.name}
+
+Record: ${formatRecord(awayStanding.win, awayStanding.loss)} | ${formatRecord(homeStanding.win, homeStanding.loss)}
+Win %: ${formatWinPercentage(awayStanding.win_p)} | ${formatWinPercentage(homeStanding.win_p)}
+Streak: ${awayStanding.streak} | ${homeStanding.streak}
+Last 10: ${awayStanding.last_10_won}-${awayStanding.last_10_lost} | ${homeStanding.last_10_won}-${homeStanding.last_10_lost}
+League Rank: ${formatRank(awayStanding.league_rank)} | ${formatRank(homeStanding.league_rank)}
+Division Rank: ${formatRank(awayStanding.division_rank)} | ${formatRank(homeStanding.division_rank)}
+Games Back: ${awayStanding.games_back} | ${homeStanding.games_back}
+    `.trim()
 
     return c.res({
-      image: `data:text/html;charset=utf-8,${encodeURIComponent(htmlContent)}`,
+      image: `https://placehold.co/1000x1000/png?text=${encodeURIComponent(comparisonText)}`,
       imageAspectRatio: '1:1',
       intents: [
         <Button action={`/games/${index}`}>Back to Game</Button>,
