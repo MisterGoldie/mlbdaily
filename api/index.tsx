@@ -282,16 +282,16 @@ app.frame('/comparison/:index', async (c) => {
     const formatRecord = (win: number, loss: number) => `${win}-${loss}`
     const formatWinPercentage = (winP: number) => `${(winP * 100).toFixed(1)}%`
 
+    const higherWinPercentageTeam = awayStanding.win_p > homeStanding.win_p ? awayStanding : homeStanding
+    const teamName = higherWinPercentageTeam === awayStanding ? game.away.name : game.home.name
+
     const comparisonText = `
 ${game.away.name} vs ${game.home.name}
 
-${game.away.name}:
-Record: ${formatRecord(awayStanding.win, awayStanding.loss)}
-Win %: ${formatWinPercentage(awayStanding.win_p)}
-
-${game.home.name}:
-Record: ${formatRecord(homeStanding.win, homeStanding.loss)}
-Win %: ${formatWinPercentage(homeStanding.win_p)}
+Higher Win %:
+${teamName}
+Record: ${formatRecord(higherWinPercentageTeam.win, higherWinPercentageTeam.loss)}
+Win %: ${formatWinPercentage(higherWinPercentageTeam.win_p)}
     `.trim()
 
     const imageUrl = `https://placehold.co/1000x1000/png?text=${encodeURIComponent(comparisonText)}&font-size=24`
