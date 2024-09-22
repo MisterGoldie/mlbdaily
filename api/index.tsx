@@ -17,11 +17,11 @@ interface Game {
   scheduled: string;
   away: { name: string; wins?: number; losses?: number };
   home: { name: string; wins?: number; losses?: number };
-  venue: { name: string };
-  broadcasts: { network: string }[];
-  pitching: { 
-    away: { probable: { last_name: string } },
-    home: { probable: { last_name: string } }
+  venue?: { name: string };
+  broadcasts?: { network: string }[];
+  pitching?: { 
+    away?: { probable?: { last_name?: string } },
+    home?: { probable?: { last_name?: string } }
   };
   away_score?: number;
   home_score?: number;
@@ -90,6 +90,15 @@ app.frame('/games/:index', async (c) => {
     const index = parseInt(c.req.param('index'))
     const game = games[index]
 
+    if (!game) {
+      return c.res({
+        image: 'https://placehold.co/600x400/png?text=Game+Not+Found',
+        intents: [
+          <Button action="/">Back to Start</Button>
+        ]
+      })
+    }
+
     const gameTime = new Date(game.scheduled).toLocaleTimeString('en-US', {
       hour: 'numeric',
       minute: '2-digit',
@@ -99,14 +108,17 @@ app.frame('/games/:index', async (c) => {
 
     let statusInfo = ''
     if (game.status === 'scheduled') {
-      statusInfo = `${gameTime} ET\nProbable Pitchers:\n${game.pitching.away.probable.last_name || 'TBA'} vs ${game.pitching.home.probable.last_name || 'TBA'}`
+      statusInfo = `${gameTime} ET\nProbable Pitchers:\n${game.pitching?.away?.probable?.last_name || 'TBA'} vs ${game.pitching?.home?.probable?.last_name || 'TBA'}`
     } else if (game.status === 'inprogress') {
-      statusInfo = `In Progress\nInning: ${game.inning_half} ${game.inning}\nScore: ${game.away_score}-${game.home_score}`
+      statusInfo = `In Progress\nInning: ${game.inning_half || ''} ${game.inning || ''}\nScore: ${game.away_score || 0}-${game.home_score || 0}`
     } else if (game.status === 'closed') {
-      statusInfo = `Final\nScore: ${game.away_score}-${game.home_score}`
+      statusInfo = `Final\nScore: ${game.away_score || 0}-${game.home_score || 0}`
     }
 
-    const imageText = `${game.away.name} (${game.away.wins}-${game.away.losses}) @\n${game.home.name} (${game.home.wins}-${game.home.losses})\n${statusInfo}\nVenue: ${game.venue.name}\nBroadcast: ${game.broadcasts[0]?.network || 'N/A'}\nGame ${index + 1} of ${games.length}`
+    const awayRecord = game.away.wins !== undefined && game.away.losses !== undefined ? `(${game.away.wins}-${game.away.losses})` : ''
+    const homeRecord = game.home.wins !== undefined && game.home.losses !== undefined ? `(${game.home.wins}-${game.home.losses})` : ''
+
+    const imageText = `${game.away.name} ${awayRecord} @\n${game.home.name} ${homeRecord}\n${statusInfo}\nVenue: ${game.venue?.name || 'TBA'}\nBroadcast: ${game.broadcasts?.[0]?.network || 'N/A'}\nGame ${index + 1} of ${games.length}`
 
     return c.res({
       image: `https://placehold.co/600x400/png?text=${encodeURIComponent(imageText)}`,
