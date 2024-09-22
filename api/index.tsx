@@ -105,17 +105,18 @@ app.frame('/games/:index', async (c) => {
 
     console.log('Full game data:', JSON.stringify(game, null, 2))
 
-    const awayTeam = game.away.name
-    const homeTeam = game.home.name
-    const awayScore = game.away.runs
-    const homeScore = game.home.runs
+    // Safely access properties with fallback values
+    const awayTeam = game.away?.name || 'Away Team'
+    const homeTeam = game.home?.name || 'Home Team'
+    const awayScore = game.away?.runs ?? 'N/A'
+    const homeScore = game.home?.runs ?? 'N/A'
 
-    let statusInfo = ''
+    let statusInfo = 'Status: Unknown'
     if (game.status === 'closed' || game.status === 'complete') {
       statusInfo = `Final: ${awayScore}-${homeScore}`
     } else if (game.status === 'inprogress' || game.status === 'live') {
       statusInfo = `In Progress: ${awayScore}-${homeScore}`
-    } else {
+    } else if (game.scheduled) {
       const gameTime = new Date(game.scheduled).toLocaleTimeString('en-US', {
         hour: 'numeric',
         minute: '2-digit',
