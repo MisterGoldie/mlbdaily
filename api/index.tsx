@@ -37,6 +37,7 @@ interface TeamStanding {
 }
 
 let standingsCache: TeamStanding[] | null = null;
+let rankingsCache: any = null;
 
 async function fetchMLBSchedule(): Promise<Game[] | null> {
   const date = new Date().toISOString().split('T')[0].replace(/-/g, '/')
@@ -73,9 +74,7 @@ async function fetchStandings(): Promise<TeamStanding[] | null> {
         games_back: team.games_back,
         streak: team.streak,
         last_10_won: team.last_10_won,
-        last_10_lost: team.last_10_lost,
-        league_rank: team.rank?.league,
-        division_rank: team.rank?.division
+        last_10_lost: team.last_10_lost
       }))
     return standingsCache
   } catch (error) {
@@ -84,9 +83,158 @@ async function fetchStandings(): Promise<TeamStanding[] | null> {
   }
 }
 
+async function fetchRankings(): Promise<any> {
+  if (rankingsCache) return rankingsCache;
+
+  const apiUrl = `https://api.sportradar.com/mlb/trial/v7/en/seasons/2024/REG/rankings.json?api_key=${API_KEY}`
+
+  try {
+    const response = await fetch(apiUrl)
+    const data = await response.json()
+    console.log('Rankings data:', JSON.stringify(data, null, 2))
+    rankingsCache = data
+    return rankingsCache
+  } catch (error) {
+    console.error('Error fetching rankings:', error)
+    return null
+  }
+}
+
 function findTeamStanding(standings: TeamStanding[], teamId: string): TeamStanding | undefined {
   return standings.find(standing => standing.team.id === teamId)
 }
+
+function updateStandingsWithRankings(standings: TeamStanding[], rankings: any): TeamStanding[] {
+  if (!rankings || !rankings.league || !rankings.league.season || !rankings.league.season.leagues) {
+    console.error('Rankings data is not in the expected format')
+    return standings
+  }
+
+  return standings.map(standing => {
+    let leagueRank, divisionRank
+
+    for (const league of rankings.league.season.leagues) {
+      if (!league.teams) continue
+      const leagueTeam = league.teams.find((team: any) => team.id === standing.team.id)
+      if (leagueTeam) {
+        leagueRank = leagueTeam.rank
+        if (league.divisions) {
+          for (const division of league.divisions) {
+            if (!division.teams) continue
+            const divisionTeam = division.teams.find((team: any) => team.id === standing.team.id)
+            if (divisionTeam) {
+              divisionRank = divisionTeam.rank
+              break
+            }
+          }
+        }
+        break
+      }
+    }
+
+    return {
+      ...standing,
+      league_rank: leagueRank,
+      division_rank: divisionRank
+    }
+  })
+}
+
+app.frame('/', async (c) => {
+  console.log('Root frame called')
+  try {
+    const games = await fetchMLBSchedule()
+
+    if (!games || games.length === 0) {
+      return c.res({
+        image: 'https://placehold.co/600x400/png?text=No+MLB+Games+Today',
+        intents: [
+          <Button>Refresh</Button>
+        ]
+      })
+    }
+
+    return c.res({
+      image: `https://placehold.co/600x400/png?text=${encodeURIComponent(`MLB Schedule\n${games.length} Games Today`)}`,
+      intents: [
+        <Button action="/games/0">View Games</Button>,
+      ],
+    })
+  } catch (error) {
+    console.error('Error in root frame:', error)
+    return c.res({
+      image: 'https://placehold.co/600x400/png?text=Error+Occurred',
+      intents: [
+        <Button>Refresh</Button>
+      ]
+    })
+  }
+})
+
+app.frame('/games/:index', async (c) => {
+  console.log('Game frame called with index:', c.req.param('index'))
+  try {
+    const [games, standings] = await Promise.all([fetchMLBSchedule(), fetchStandings()])
+    
+    if (!games || games.length === 0 || !standings) {
+      return c.res({
+        image: 'https://placehold.co/600x400/png?text=No+Data+Available',
+        intents: [
+          <Button action="/">Back to Start</Button>
+        ]
+      })
+    }
+
+    const index = parseInt(c.req.param('index'))
+    const game = games[index]
+
+    if (!game) {
+      return c.res({
+        image: 'https://placehold.co/600x400/png?text=Game+Not+Found',
+        intents: [
+          <Button action="/">Back to Start</Button>
+        ]
+      })
+    }
+
+    const gameTime = new Date(game.scheduled).toLocaleTimeString('en-US', {
+      hour: 'numeric',
+      minute: '2-digit',
+      hour12: true,
+      timeZone: 'America/New_York'
+    })
+
+    let statusInfo = game.status === 'scheduled' ? `${gameTime} ET` : 
+                     game.status === 'inprogress' ? `In Progress\nInning: ${game.inning_half || ''} ${game.inning || ''}\nScore: ${game.away_score || 0}-${game.home_score || 0}` :
+                     `Final: ${game.away_score || 0}-${game.home_score || 0}`
+
+    const awayStanding = findTeamStanding(standings, game.away.id)
+    const homeStanding = findTeamStanding(standings, game.home.id)
+
+    const awayRecord = awayStanding ? `${awayStanding.win}-${awayStanding.loss}` : 'N/A'
+    const homeRecord = homeStanding ? `${homeStanding.win}-${homeStanding.loss}` : 'N/A'
+
+    const imageText = `${game.away.name} (${awayRecord}) @ ${game.home.name} (${homeRecord})\n${statusInfo}\nGame ${index + 1} of ${games.length}`
+
+    return c.res({
+      image: `https://placehold.co/600x400/png?text=${encodeURIComponent(imageText)}`,
+      intents: [
+        <Button action={`/comparison/${index}`}>Team Comparison</Button>,
+        index > 0 && <Button action={`/games/${index - 1}`}>Previous</Button>,
+        index < games.length - 1 && <Button action={`/games/${index + 1}`}>Next</Button>,
+        <Button action="/">Back to Start</Button>,
+      ].filter(Boolean),
+    })
+  } catch (error) {
+    console.error('Error in game frame:', error)
+    return c.res({
+      image: 'https://placehold.co/600x400/png?text=Error+Occurred',
+      intents: [
+        <Button action="/">Back to Start</Button>
+      ]
+    })
+  }
+})
 
 app.frame('/comparison/:index', async (c) => {
   console.log('Comparison frame called with index:', c.req.param('index'))
