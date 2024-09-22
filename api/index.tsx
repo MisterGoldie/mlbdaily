@@ -276,20 +276,30 @@ app.frame('/comparison/:index', async (c) => {
       })
     }
 
-    const formatValue = (value: number | string) => value.toString().padStart(4, ' ')
-    const formatRank = (rank: number | undefined) => rank ? rank.toString().padStart(2, ' ') : 'N/A'
+    const formatRecord = (win: number, loss: number) => `${win}-${loss}`
+    const formatWinPercentage = (winP: number) => `${(winP * 100).toFixed(1)}%`
 
-    const comparisonText = `${game.away.name} vs ${game.home.name}\n` +
-      `Record: ${formatValue(awayStanding.win)}-${formatValue(awayStanding.loss)} | ${formatValue(homeStanding.win)}-${formatValue(homeStanding.loss)}\n` +
-      `Win %:  ${awayStanding.win_p.toFixed(3)} | ${homeStanding.win_p.toFixed(3)}\n` +
-      `Streak:   ${awayStanding.streak.padEnd(3, ' ')} | ${homeStanding.streak.padEnd(3, ' ')}\n` +
-      `Last 10:  ${awayStanding.last_10_won}-${awayStanding.last_10_lost} | ${homeStanding.last_10_won}-${homeStanding.last_10_lost}\n` +
-      `LgRank:    ${formatRank(awayStanding.league_rank)} | ${formatRank(homeStanding.league_rank)}\n` +
-      `DivRank:   ${formatRank(awayStanding.division_rank)} | ${formatRank(homeStanding.division_rank)}\n` +
-      `GB:     ${formatValue(awayStanding.games_back)} | ${formatValue(homeStanding.games_back)}`
+    const comparisonText = `
+${game.away.name.padEnd(20)}${game.home.name}
+
+Record :${formatRecord(awayStanding.win, awayStanding.loss).padStart(20)}${formatRecord(homeStanding.win, homeStanding.loss).padStart(20)}
+
+Win % :${formatWinPercentage(awayStanding.win_p).padStart(20)}${formatWinPercentage(homeStanding.win_p).padStart(20)}
+
+Streak :${awayStanding.streak.padStart(20)}${homeStanding.streak.padStart(20)}
+
+Last 10 :${`${awayStanding.last_10_won}-${awayStanding.last_10_lost}`.padStart(20)}${`${homeStanding.last_10_won}-${homeStanding.last_10_lost}`.padStart(20)}
+
+LgRank :${(awayStanding.league_rank || 'N/A').toString().padStart(20)}${(homeStanding.league_rank || 'N/A').toString().padStart(20)}
+
+DivRank:${(awayStanding.division_rank || 'N/A').toString().padStart(20)}${(homeStanding.division_rank || 'N/A').toString().padStart(20)}
+
+GB :${awayStanding.games_back.toString().padStart(20)}${homeStanding.games_back.toString().padStart(20)}
+`
 
     return c.res({
-      image: `https://placehold.co/600x400/png?text=${encodeURIComponent(comparisonText)}`,
+      // Significantly reduced font size by setting a large image size
+      image: `https://placehold.co/1200x800/png?text=${encodeURIComponent(comparisonText)}`,
       intents: [
         <Button action={`/games/${index}`}>Back to Game</Button>,
         <Button action="/">Back to Start</Button>
