@@ -56,14 +56,46 @@ const contentStyle = {
 }
 
 app.frame('/', async (c) => {
-  const games = await fetchMLBSchedule()
+  console.log('Root frame called')
+  try {
+    const games = await fetchMLBSchedule()
 
-  if (!games || games.length === 0) {
+    if (!games || games.length === 0) {
+      return c.res({
+        image: (
+          <div style={backgroundStyle}>
+            <div style={contentStyle}>
+              <div style={{ fontSize: '32px', textAlign: 'center' }}>No MLB games scheduled for today.</div>
+            </div>
+          </div>
+        ),
+        intents: [
+          <Button>Refresh</Button>
+        ]
+      })
+    }
+
     return c.res({
       image: (
         <div style={backgroundStyle}>
           <div style={contentStyle}>
-            <div style={{ fontSize: '32px', textAlign: 'center' }}>No MLB games scheduled for today.</div>
+            <div style={{ fontSize: '36px', fontWeight: 'bold', marginBottom: '20px', textShadow: '2px 2px 4px rgba(0,0,0,0.5)' }}>Today's MLB Games</div>
+            <div style={{ fontSize: '24px', marginBottom: '10px' }}>{games.length} game{games.length !== 1 ? 's' : ''} scheduled</div>
+            <div style={{ fontSize: '20px' }}>Tap 'View Games' to see details</div>
+          </div>
+        </div>
+      ),
+      intents: [
+        <Button action="/games/0">View Games</Button>,
+      ],
+    })
+  } catch (error) {
+    console.error('Error in root frame:', error)
+    return c.res({
+      image: (
+        <div style={backgroundStyle}>
+          <div style={contentStyle}>
+            <div style={{ fontSize: '32px', textAlign: 'center' }}>An error occurred. Please try again later.</div>
           </div>
         </div>
       ),
@@ -72,31 +104,53 @@ app.frame('/', async (c) => {
       ]
     })
   }
-
-  return c.res({
-    image: (
-      <div style={backgroundStyle}>
-        <div style={contentStyle}>
-          <div style={{ fontSize: '36px', fontWeight: 'bold', marginBottom: '20px', textShadow: '2px 2px 4px rgba(0,0,0,0.5)' }}>Today's MLB Games</div>
-          <div style={{ fontSize: '24px', marginBottom: '10px' }}>{games.length} game{games.length !== 1 ? 's' : ''} scheduled</div>
-          <div style={{ fontSize: '20px' }}>Tap 'View Games' to see details</div>
-        </div>
-      </div>
-    ),
-    intents: [
-      <Button action="/games/0">View Games</Button>,
-    ],
-  })
 })
 
 app.frame('/games/:index', async (c) => {
-  const games = await fetchMLBSchedule()
-  if (!games || games.length === 0) {
+  console.log('Game frame called with index:', c.req.param('index'))
+  try {
+    const games = await fetchMLBSchedule()
+    if (!games || games.length === 0) {
+      return c.res({
+        image: (
+          <div style={backgroundStyle}>
+            <div style={contentStyle}>
+              <div style={{ fontSize: '32px', textAlign: 'center' }}>No MLB games scheduled for today.</div>
+            </div>
+          </div>
+        ),
+        intents: [
+          <Button action="/">Back to Start</Button>
+        ]
+      })
+    }
+
+    const index = parseInt(c.req.param('index'))
+    const game = games[index]
+
     return c.res({
       image: (
         <div style={backgroundStyle}>
           <div style={contentStyle}>
-            <div style={{ fontSize: '32px', textAlign: 'center' }}>No MLB games scheduled for today.</div>
+            <div style={{ fontSize: '28px', fontWeight: 'bold', marginBottom: '20px', textAlign: 'center', textShadow: '2px 2px 4px rgba(0,0,0,0.5)' }}>{game.away.name} @ {game.home.name}</div>
+            <div style={{ fontSize: '24px', marginBottom: '10px' }}>{new Date(game.scheduled).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</div>
+            <div style={{ fontSize: '20px' }}>Game {index + 1} of {games.length}</div>
+          </div>
+        </div>
+      ),
+      intents: [
+        index > 0 && <Button action={`/games/${index - 1}`}>Previous</Button>,
+        index < games.length - 1 && <Button action={`/games/${index + 1}`}>Next</Button>,
+        <Button action="/">Back to Start</Button>,
+      ].filter(Boolean),
+    })
+  } catch (error) {
+    console.error('Error in game frame:', error)
+    return c.res({
+      image: (
+        <div style={backgroundStyle}>
+          <div style={contentStyle}>
+            <div style={{ fontSize: '32px', textAlign: 'center' }}>An error occurred. Please try again later.</div>
           </div>
         </div>
       ),
@@ -105,26 +159,6 @@ app.frame('/games/:index', async (c) => {
       ]
     })
   }
-
-  const index = parseInt(c.req.param('index'))
-  const game = games[index]
-
-  return c.res({
-    image: (
-      <div style={backgroundStyle}>
-        <div style={contentStyle}>
-          <div style={{ fontSize: '28px', fontWeight: 'bold', marginBottom: '20px', textAlign: 'center', textShadow: '2px 2px 4px rgba(0,0,0,0.5)' }}>{game.away.name} @ {game.home.name}</div>
-          <div style={{ fontSize: '24px', marginBottom: '10px' }}>{new Date(game.scheduled).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</div>
-          <div style={{ fontSize: '20px' }}>Game {index + 1} of {games.length}</div>
-        </div>
-      </div>
-    ),
-    intents: [
-      index > 0 && <Button action={`/games/${index - 1}`}>Previous</Button>,
-      index < games.length - 1 && <Button action={`/games/${index + 1}`}>Next</Button>,
-      <Button action="/">Back to Start</Button>,
-    ].filter(Boolean),
-  })
 })
 
 const isProduction = process.env.NODE_ENV === 'production'
