@@ -69,22 +69,9 @@ async function fetchStandings(): Promise<{[key: string]: TeamStanding}> {
 }
 
 async function fetchTeamLogos(): Promise<{[key: string]: string}> {
-  const apiUrl = `https://api.sportradar.com/mlb-images-t3/ap/logos/manifest.json?api_key=${API_KEY}`
-
-  try {
-    const response = await fetch(apiUrl)
-    const data = await response.json()
-    const logos: {[key: string]: string} = {}
-    data.assetlist.forEach((asset: any) => {
-      if (asset.type === 'primary') {
-        logos[asset.team_id] = `https://api.sportradar.com/mlb-images-t3/ap${asset.links[1].href}`
-      }
-    })
-    return logos
-  } catch (error) {
-    console.error('Error fetching team logos:', error)
-    return {}
-  }
+  // For now, we'll return an empty object instead of fetching logos
+  console.log('Logo fetching is currently disabled due to API issues')
+  return {}
 }
 
 app.frame('/', async (c) => {
@@ -121,7 +108,7 @@ app.frame('/', async (c) => {
 app.frame('/games/:index', async (c) => {
   console.log('Game frame called with index:', c.req.param('index'))
   try {
-    const [games, standings, logos] = await Promise.all([fetchMLBSchedule(), fetchStandings(), fetchTeamLogos()])
+    const [games, standings] = await Promise.all([fetchMLBSchedule(), fetchStandings()])
     if (!games || games.length === 0) {
       return c.res({
         image: 'https://placehold.co/600x400/png?text=No+MLB+Games+Today',
@@ -160,10 +147,7 @@ app.frame('/games/:index', async (c) => {
     const awayRecord = awayStanding ? `(${awayStanding.wins}-${awayStanding.losses})` : '(0-0)'
     const homeRecord = homeStanding ? `(${homeStanding.wins}-${homeStanding.losses})` : '(0-0)'
 
-    const awayLogo = logos[game.away.id] || ''
-    const homeLogo = logos[game.home.id] || ''
-
-    const imageText = `${game.away.name} ${awayRecord} @ ${game.home.name} ${homeRecord}\n${statusInfo}\nGame ${index + 1} of ${games.length}\nAway Logo: ${awayLogo}\nHome Logo: ${homeLogo}`
+    const imageText = `${game.away.name} ${awayRecord} @ ${game.home.name} ${homeRecord}\n${statusInfo}\nGame ${index + 1} of ${games.length}`
 
     return c.res({
       image: `https://placehold.co/600x400/png?text=${encodeURIComponent(imageText)}`,
