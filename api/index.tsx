@@ -15,18 +15,18 @@ interface Game {
   id: string;
   status: string;
   scheduled: string;
-  away: { name: string; wins?: number; losses?: number };
-  home: { name: string; wins?: number; losses?: number };
-  venue?: { name: string };
-  broadcasts?: { network: string }[];
-  pitching?: { 
-    away?: { probable?: { last_name?: string } },
-    home?: { probable?: { last_name?: string } }
-  };
+  away: { name: string; id: string };
+  home: { name: string; id: string };
   away_score?: number;
   home_score?: number;
   inning?: number;
   inning_half?: string;
+}
+
+interface TeamStanding {
+  id: string;
+  wins: number;
+  losses: number;
 }
 
 async function fetchMLBSchedule(): Promise<Game[] | null> {
@@ -40,6 +40,31 @@ async function fetchMLBSchedule(): Promise<Game[] | null> {
   } catch (error) {
     console.error('Error fetching schedule:', error)
     return null
+  }
+}
+
+async function fetchStandings(): Promise<{[key: string]: TeamStanding}> {
+  const apiUrl = `https://api.sportradar.com/mlb/trial/v7/en/seasons/2024/REG/standings.json?api_key=${API_KEY}`
+
+  try {
+    const response = await fetch(apiUrl)
+    const data = await response.json()
+    const standings: {[key: string]: TeamStanding} = {}
+    data.leagues.forEach((league: any) => {
+      league.divisions.forEach((division: any) => {
+        division.teams.forEach((team: any) => {
+          standings[team.id] = {
+            id: team.id,
+            wins: team.win,
+            losses: team.loss
+          }
+        })
+      })
+    })
+    return standings
+  } catch (error) {
+    console.error('Error fetching standings:', error)
+    return {}
   }
 }
 
@@ -77,7 +102,7 @@ app.frame('/', async (c) => {
 app.frame('/games/:index', async (c) => {
   console.log('Game frame called with index:', c.req.param('index'))
   try {
-    const games = await fetchMLBSchedule()
+    const [games, standings] = await Promise.all([fetchMLBSchedule(), fetchStandings()])
     if (!games || games.length === 0) {
       return c.res({
         image: 'https://placehold.co/600x400/png?text=No+MLB+Games+Today',
@@ -106,19 +131,17 @@ app.frame('/games/:index', async (c) => {
       timeZone: 'America/New_York'
     })
 
-    let statusInfo = ''
-    if (game.status === 'scheduled') {
-      statusInfo = `${gameTime} ET\nProbable Pitchers:\n${game.pitching?.away?.probable?.last_name || 'TBA'} vs ${game.pitching?.home?.probable?.last_name || 'TBA'}`
-    } else if (game.status === 'inprogress') {
-      statusInfo = `In Progress\nInning: ${game.inning_half || ''} ${game.inning || ''}\nScore: ${game.away_score || 0}-${game.home_score || 0}`
-    } else if (game.status === 'closed') {
-      statusInfo = `Final\nScore: ${game.away_score || 0}-${game.home_score || 0}`
-    }
+    const awayStanding = standings[game.away.id]
+    const homeStanding = standings[game.home.id]
 
-    const awayRecord = game.away.wins !== undefined && game.away.losses !== undefined ? `(${game.away.wins}-${game.away.losses})` : ''
-    const homeRecord = game.home.wins !== undefined && game.home.losses !== undefined ? `(${game.home.wins}-${game.home.losses})` : ''
+    let statusInfo = game.status === 'scheduled' ? `${gameTime} ET` : 
+                     game.status === 'inprogress' ? `In Progress\nInning: ${game.inning_half || ''} ${game.inning || ''}\nScore: ${game.away_score || 0}-${game.home_score || 0}` :
+                     `Final: ${game.away_score || 0}-${game.home_score || 0}`
 
-    const imageText = `${game.away.name} ${awayRecord} @\n${game.home.name} ${homeRecord}\n${statusInfo}\nVenue: ${game.venue?.name || 'TBA'}\nBroadcast: ${game.broadcasts?.[0]?.network || 'N/A'}\nGame ${index + 1} of ${games.length}`
+    const awayRecord = awayStanding ? `(${awayStanding.wins}-${awayStanding.losses})` : ''
+    const homeRecord = homeStanding ? `(${homeStanding.wins}-${homeStanding.losses})` : ''
+
+    const imageText = `${game.away.name} ${awayRecord} @\n${game.home.name} ${homeRecord}\n${statusInfo}\nGame ${index + 1} of ${games.length}`
 
     return c.res({
       image: `https://placehold.co/600x400/png?text=${encodeURIComponent(imageText)}`,
