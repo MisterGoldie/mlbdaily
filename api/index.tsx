@@ -280,25 +280,23 @@ app.frame('/comparison/:index', async (c) => {
     }
 
     const formatRecord = (win: number, loss: number) => `${win}-${loss}`
-    const formatWinPercentage = (winP: number) => `${(winP * 100).toFixed(1)}%`
-    const formatRank = (rank: number | undefined) => rank?.toString() || 'N/A'
+    const formatWinPercentage = (winP: number) => `${(winP * 100).toFixed(0)}%`
 
     const comparisonText = `
 ${game.away.name} vs ${game.home.name}
 
-Record: ${formatRecord(awayStanding.win, awayStanding.loss)} | ${formatRecord(homeStanding.win, homeStanding.loss)}
-Win %: ${formatWinPercentage(awayStanding.win_p)} | ${formatWinPercentage(homeStanding.win_p)}
-Streak: ${awayStanding.streak} | ${homeStanding.streak}
-Last 10: ${awayStanding.last_10_won}-${awayStanding.last_10_lost} | ${homeStanding.last_10_won}-${homeStanding.last_10_lost}
-League Rank: ${formatRank(awayStanding.league_rank)} | ${formatRank(homeStanding.league_rank)}
-Division Rank: ${formatRank(awayStanding.division_rank)} | ${formatRank(homeStanding.division_rank)}
-Games Back: ${awayStanding.games_back} | ${homeStanding.games_back}
+
+Record:  ${formatRecord(awayStanding.win, awayStanding.loss)}  |  ${formatRecord(homeStanding.win, homeStanding.loss)}
+
+
+Win %:   ${formatWinPercentage(awayStanding.win_p)}  |  ${formatWinPercentage(homeStanding.win_p)}
     `.trim()
 
     return c.res({
       image: `https://placehold.co/1000x1000/png?text=${encodeURIComponent(comparisonText)}`,
       imageAspectRatio: '1:1',
       intents: [
+        <Button action={`/comparison2/${index}`}>More Stats</Button>,
         <Button action={`/games/${index}`}>Back to Game</Button>,
         <Button action="/">Back to Start</Button>
       ],
