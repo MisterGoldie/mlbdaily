@@ -296,7 +296,7 @@ GB: ${awayStanding.games_back} | ${homeStanding.games_back}
     `.trim()
 
     const encodedText = encodeURIComponent(comparisonText)
-    const imageUrl = `https://placehold.co/1000x1000/png?text=${encodedText}&font=arial&font-size=24`
+    const imageUrl = `https://placehold.co/1000x1000/png?text=${encodedText}&font=arial&font-size=16`
 
     return c.res({
       image: imageUrl,
