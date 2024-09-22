@@ -33,6 +33,21 @@ async function fetchMLBSchedule(): Promise<Game[] | null> {
   }
 }
 
+const baseStyles = {
+  backgroundImage: `url(${BACKGROUND_IMAGE})`,
+  backgroundSize: 'cover',
+  width: '100%',
+  height: '100%',
+  display: 'flex',
+  flexDirection: 'column',
+  justifyContent: 'center',
+  alignItems: 'center',
+  color: 'white',
+  fontSize: 32,
+  fontWeight: 'bold',
+  textAlign: 'center',
+}
+
 app.frame('/', async (c) => {
   console.log('Root frame called')
   try {
@@ -41,23 +56,10 @@ app.frame('/', async (c) => {
     if (!games || games.length === 0) {
       return c.res({
         image: (
-          <div
-            style={{
-              backgroundImage: `url(${BACKGROUND_IMAGE})`,
-              backgroundSize: 'cover',
-              width: '100%',
-              height: '100%',
-              display: 'flex',
-              flexDirection: 'column',
-              justifyContent: 'center',
-              alignItems: 'center',
-              color: 'white',
-              fontSize: 32,
-              fontWeight: 'bold',
-              textAlign: 'center',
-            }}
-          >
-            No MLB Games Today
+          <div style={baseStyles}>
+            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+              <div>No MLB Games Today</div>
+            </div>
           </div>
         ),
         intents: [
@@ -68,24 +70,11 @@ app.frame('/', async (c) => {
 
     return c.res({
       image: (
-        <div
-          style={{
-            backgroundImage: `url(${BACKGROUND_IMAGE})`,
-            backgroundSize: 'cover',
-            width: '100%',
-            height: '100%',
-            display: 'flex',
-            flexDirection: 'column',
-            justifyContent: 'center',
-            alignItems: 'center',
-            color: 'white',
-            fontSize: 32,
-            fontWeight: 'bold',
-            textAlign: 'center',
-          }}
-        >
-          <div>MLB Schedule</div>
-          <div>{games.length} Games Today</div>
+        <div style={baseStyles}>
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+            <div>MLB Schedule</div>
+            <div>{games.length} Games Today</div>
+          </div>
         </div>
       ),
       intents: [
@@ -96,23 +85,10 @@ app.frame('/', async (c) => {
     console.error('Error in root frame:', error)
     return c.res({
       image: (
-        <div
-          style={{
-            backgroundImage: `url(${BACKGROUND_IMAGE})`,
-            backgroundSize: 'cover',
-            width: '100%',
-            height: '100%',
-            display: 'flex',
-            flexDirection: 'column',
-            justifyContent: 'center',
-            alignItems: 'center',
-            color: 'white',
-            fontSize: 32,
-            fontWeight: 'bold',
-            textAlign: 'center',
-          }}
-        >
-          Error Occurred
+        <div style={baseStyles}>
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+            <div>Error Occurred</div>
+          </div>
         </div>
       ),
       intents: [
@@ -129,23 +105,10 @@ app.frame('/games/:index', async (c) => {
     if (!games || games.length === 0) {
       return c.res({
         image: (
-          <div
-            style={{
-              backgroundImage: `url(${BACKGROUND_IMAGE})`,
-              backgroundSize: 'cover',
-              width: '100%',
-              height: '100%',
-              display: 'flex',
-              flexDirection: 'column',
-              justifyContent: 'center',
-              alignItems: 'center',
-              color: 'white',
-              fontSize: 32,
-              fontWeight: 'bold',
-              textAlign: 'center',
-            }}
-          >
-            No MLB Games Today
+          <div style={baseStyles}>
+            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+              <div>No MLB Games Today</div>
+            </div>
           </div>
         ),
         intents: [
@@ -166,25 +129,12 @@ app.frame('/games/:index', async (c) => {
 
     return c.res({
       image: (
-        <div
-          style={{
-            backgroundImage: `url(${BACKGROUND_IMAGE})`,
-            backgroundSize: 'cover',
-            width: '100%',
-            height: '100%',
-            display: 'flex',
-            flexDirection: 'column',
-            justifyContent: 'center',
-            alignItems: 'center',
-            color: 'white',
-            fontSize: 28,
-            fontWeight: 'bold',
-            textAlign: 'center',
-          }}
-        >
-          <div>{game.away.name} @ {game.home.name}</div>
-          <div>{gameTime} ET</div>
-          <div>Game {index + 1} of {games.length}</div>
+        <div style={baseStyles}>
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+            <div>{game.away.name} @ {game.home.name}</div>
+            <div>{gameTime} ET</div>
+            <div>Game {index + 1} of {games.length}</div>
+          </div>
         </div>
       ),
       intents: [
@@ -197,23 +147,10 @@ app.frame('/games/:index', async (c) => {
     console.error('Error in game frame:', error)
     return c.res({
       image: (
-        <div
-          style={{
-            backgroundImage: `url(${BACKGROUND_IMAGE})`,
-            backgroundSize: 'cover',
-            width: '100%',
-            height: '100%',
-            display: 'flex',
-            flexDirection: 'column',
-            justifyContent: 'center',
-            alignItems: 'center',
-            color: 'white',
-            fontSize: 32,
-            fontWeight: 'bold',
-            textAlign: 'center',
-          }}
-        >
-          Error Occurred
+        <div style={baseStyles}>
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+            <div>Error Occurred</div>
+          </div>
         </div>
       ),
       intents: [
