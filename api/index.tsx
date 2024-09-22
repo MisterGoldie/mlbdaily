@@ -210,16 +210,21 @@ app.frame('/games/:index', async (c) => {
       timeZone: 'America/New_York'
     })
 
+    const getScore = (game: Game) => {
+      const awayScore = game.away_score ?? (game.away as any).points ?? 0
+      const homeScore = game.home_score ?? (game.home as any).points ?? 0
+      return `${awayScore}-${homeScore}`
+    }
+
     let statusInfo = ''
     if (game.status === 'scheduled') {
       statusInfo = `${gameTime} ET`
-    } else if (game.status === 'inprogress' || game.status === 'complete') {
-      const score = `Score: ${game.away_score || 0}-${game.home_score || 0}`
-      if (game.status === 'inprogress') {
-        statusInfo = `In Progress\nInning: ${game.inning_half || ''} ${game.inning || ''}\n${score}`
-      } else {
-        statusInfo = `Final\n${score}`
-      }
+    } else if (game.status === 'inprogress' || game.status === 'live') {
+      const score = `Score: ${getScore(game)}`
+      statusInfo = `In Progress\nInning: ${game.inning || ''} ${game.inning_half || ''}\n${score}`
+    } else if (game.status === 'closed' || game.status === 'complete') {
+      const score = `Final: ${getScore(game)}`
+      statusInfo = score
     } else {
       statusInfo = game.status
     }
