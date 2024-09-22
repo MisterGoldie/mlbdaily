@@ -227,11 +227,11 @@ app.frame('/games/:index', async (c) => {
     })
 
     let statusInfo = ''
-    if (boxScore) {
-      const awayScore = boxScore.away.runs || 0
-      const homeScore = boxScore.home.runs || 0
-      const inning = boxScore.game.inning || ''
-      const inningHalf = boxScore.game.inning_half || ''
+    if (boxScore && boxScore.game) {
+      const awayScore = boxScore.away?.runs ?? game.away_score ?? 0
+      const homeScore = boxScore.home?.runs ?? game.home_score ?? 0
+      const inning = boxScore.game.inning ?? ''
+      const inningHalf = boxScore.game.inning_half ?? ''
 
       if (game.status === 'scheduled') {
         statusInfo = `${gameTime} ET`
@@ -243,7 +243,13 @@ app.frame('/games/:index', async (c) => {
         statusInfo = game.status
       }
     } else {
-      statusInfo = game.status
+      // Fallback to using game data if box score is not available
+      statusInfo = game.status === 'scheduled' ? `${gameTime} ET` : 
+                   game.status === 'inprogress' || game.status === 'live' ? 
+                   `In Progress\nScore: ${game.away_score ?? 0}-${game.home_score ?? 0}` :
+                   game.status === 'closed' || game.status === 'complete' ? 
+                   `Final: ${game.away_score ?? 0}-${game.home_score ?? 0}` :
+                   game.status
     }
 
     const awayStanding = findTeamStanding(standings, game.away.id)
