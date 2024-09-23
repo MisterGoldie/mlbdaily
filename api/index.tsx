@@ -156,7 +156,7 @@ app.frame('/games/:index', async (c) => {
     return c.res({
       image: 'https://placehold.co/1200x630/png?text=Error+Occurred&font-size=40',
       intents: [
-        <Button action="/">Back to Start</Button>
+        <Button action="/">Back to start</Button>
       ]
     })
   }
