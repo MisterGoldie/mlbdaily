@@ -321,5 +321,6 @@ ${homeTeam}: ${game.home.abbr}
 const isProduction = process.env.NODE_ENV === 'production'
 devtools(app, isProduction ? { assetsPath: '/.frog' } : { serveStatic })
 
+export const HEAD = handle(app);
 export const GET = handle(app)
 export const POST = handle(app)
