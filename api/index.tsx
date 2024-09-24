@@ -1,13 +1,27 @@
 import { Button, Frog } from 'frog'
 import { devtools } from 'frog/dev'
+import { neynar } from 'frog/middlewares';
 import { serveStatic } from 'frog/serve-static'
 import { handle } from 'frog/vercel'
 
-export const app = new Frog({
-  assetsPath: '/',
+export const app = new Frog({ //Always include if using Airstack so it tracks moxie
   basePath: '/api',
-  title: 'MLB Schedule',
-})
+  imageOptions: { width: 1200, height: 628 },
+  title: 'MLB Today',
+  hub: {
+    apiUrl: "https://hubs.airstack.xyz",
+    fetchOptions: {
+      headers: {
+        "x-airstack-hubs": "103ba30da492d4a7e89e7026a6d3a234e", // Your Airstack API key
+      }
+    }
+  }
+}).use(
+  neynar({
+    apiKey: 'NEYNAR_FROG_FM',
+    features: ['interactor', 'cast'],
+  })
+);
 
 const API_KEY = 'FBKXX1hlX9Uo4vJ1y7Lcv7A9ScCFJSTpZwpXZdbX'
 
